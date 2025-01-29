@@ -51,8 +51,8 @@ def format_instruction(instruction):
 
     if "label" in instruction:
         return f"{instruction['label']}:"
-    elif op in ("br", "jmp", "load", "store"):
-        formatted += f"{op} {args_and_labels}"
+    elif op in ("br", "jmp", "load", "store", "free", "print", "ret"):
+        formatted += f"{op}{' ' if args_and_labels else ''}{args_and_labels}"
     elif op == "call":
         if "dest" in instruction:
             formatted += f"{dest}: {tp} = "
@@ -67,9 +67,10 @@ def print_blocks(labels_and_blocks):
     for func, l_and_b in labels_and_blocks.items():
         print(f"@{func}")
         for label, block in l_and_b:
-            print(f"  {label}:")
+            print(f"  --{label}--")
             for i in block:
-                print(f"    {format_instruction(i)}")
+                if "label" not in i:
+                    print(f"  {format_instruction(i)}")
 
 
 # TODO: should I create a unique exit block if one does not exist?

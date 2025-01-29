@@ -1,0 +1,13 @@
+Number of functions: 3
+Number of labels: 3
+Number of function call sites: 9
+Breakdown of instructions by opcode:
+  id:     56%
+  ptradd: 5%
+  load:   2%
+  lt:     1%
+  br:     1%
+  store:  2%
+  const:  20%
+  jmp:    1%
+  call:   11%

@@ -1,1 +1,15 @@
+[envs.run]
 command = "bril2json < {filename} | brili {args}"
+output.run = "-"
+
+[envs.blocks]
+command = "bril2json < {filename} | python l1/analyzer.py blocks"
+output.blocks = "-"
+
+[envs.cfg]
+command = "bril2json < {filename} | python l1/analyzer.py cfg"
+output.cfg = "-"
+
+[envs.stats]
+command = "bril2json < {filename} | python l1/analyzer.py stats"
+output.stats = "-"
