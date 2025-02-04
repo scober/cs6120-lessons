@@ -1,0 +1,6 @@
+# it simplifies things to symlink utilities into every lesson directory, but I
+#   don't want to commit every copy of it
+l*/utilities.py
+
+# ignore python interpreter's stuff
+*/__pycache__/*
