@@ -40,3 +40,13 @@ def coalesce_blocks(blocks):
         func_dict[instrs] = instrs
         json_dict["functions"].append(func_dict)
     return json_dict
+
+
+def global_optimization(optimization):
+    def outer(prog):
+        out = {"functions": []}
+        for func in prog["functions"]:
+            out["functions"].append(optimization(func))
+        return out
+
+    return outer
