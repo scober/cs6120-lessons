@@ -7,16 +7,16 @@ import utilities as ut
 
 
 @ut.global_optimization
-def global_simple_dead_code_elimination(func):
+def global_simple_dead_code_elimination(instrs):
     used = set()
-    for instr in func["instrs"]:
+    for instr in instrs:
         if "args" in instr:
             used.update(instr["args"])
     out = []
-    for instr in func["instrs"]:
+    for instr in instrs:
         if "dest" not in instr or instr["dest"] in used:
             out.append(instr)
-    return {"name": func["name"], "instrs": out}
+    return out
 
 
 @click.group
