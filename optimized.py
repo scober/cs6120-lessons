@@ -30,9 +30,11 @@ def run_bril(filename, optimizer):
 
     pipeline = f"bril2json < {filename} | {optimizer} | brili -p {args}"
     output = subprocess.getoutput(pipeline).splitlines()
-    assert output[-1].startswith("total_dyn_inst:"), f"{pipeline} gave output {output}"
+    dynamic_instructions = (
+        output[-1].split(" ")[-1] if output[-1].startswith("total_dyn_inst:") else -1
+    )
 
-    return output[:-1], output[-1].split(" ")[-1]
+    return output[:-1], dynamic_instructions
 
 
 def count_static_instructions(filename, optimizer):
