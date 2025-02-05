@@ -1,3 +1,4 @@
+import copy
 import json
 import sys
 
@@ -46,7 +47,9 @@ def global_optimization(optimization):
     def outer(prog):
         out = {"functions": []}
         for func in prog["functions"]:
-            out["functions"].append(optimization(func))
+            out_func = copy.deepcopy(func)
+            out_func["instrs"] = optimization(out_func["instrs"])
+            out["functions"].append(out_func)
         return out
 
     return outer
