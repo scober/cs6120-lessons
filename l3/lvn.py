@@ -21,9 +21,12 @@ def canonicalize(value, table):
 
 def construct_value(instr, environment, value_table):
     value = (
-        [instr["op"]]
-        + [environment[arg] for arg in instr.get("args", [])]
-        + ([instr["value"]] if "value" in instr else [])
+        (
+            ([instr["type"]] if "type" in instr else [])
+            + [instr["op"]]
+            + [environment[arg] for arg in instr.get("args", [])]
+            + ([instr["value"]] if "value" in instr else [])
+        ),
     )
     return tuple(canonicalize(value, value_table))
 
@@ -54,6 +57,8 @@ def freshen_var(var_name, rest_of_block, all_vars):
 
 def local_value_number_instruction(instr, dest, value_home, environment):
     oi = copy.deepcopy(instr)
+    if ut.has_side_effects(instr):
+        return oi
     if "dest" in oi:
         oi["dest"] = dest
     if "args" in oi:
@@ -90,7 +95,7 @@ def local_value_numbering(block):
             out.append(copy_value(instr, var_home))
             dest = instr["dest"]
         else:
-            if "dest" in instr:
+            if "dest" in instr and not ut.has_side_effects(instr):
                 dest = instr["dest"]
 
                 dest = freshen_var(dest, block[pos + 1 :], all_vars)
@@ -103,10 +108,11 @@ def local_value_numbering(block):
                 local_value_number_instruction(instr, dest, value_home, environment)
             )
 
-        if dest:
-            environment[dest] = row_num
-        if "dest" in instr:
-            environment[instr["dest"]] = row_num
+        if not ut.has_side_effects(instr):
+            if dest:
+                environment[dest] = row_num
+            if "dest" in instr:
+                environment[instr["dest"]] = row_num
 
     return out
 
