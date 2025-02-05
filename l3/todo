@@ -1,5 +1,5 @@
 [ ] utilities
-[ ] optimized
+[X] optimized
 [ ] local dce
 [ ] global dce
 [ ] simple lvn

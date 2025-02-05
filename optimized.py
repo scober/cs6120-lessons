@@ -8,6 +8,15 @@ from colored import Fore, Back, Style
 import utilities as ut
 
 
+def args_are_for_bril(args):
+    # in case we want to switch back to a block list
+    # bad_args = ["tdce", "dkp"]
+    bril_args = ["true", "false"]
+    return all(
+        arg.lstrip("-").isnumeric() or arg in bril_args for arg in args.split(" ")
+    )
+
+
 def run_bril(filename, optimizer):
     assert filename.endswith(".bril"), f"{filename} does not end with .bril"
 
@@ -16,6 +25,8 @@ def run_bril(filename, optimizer):
         for line in f:
             if "ARGS" in line:
                 args = line.split(":")[-1].strip()
+                if not args_are_for_bril(args):
+                    args = ""
 
     pipeline = f"bril2json < {filename} | {optimizer} | brili -p {args}"
     output = subprocess.getoutput(pipeline).splitlines()
