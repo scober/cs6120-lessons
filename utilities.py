@@ -43,12 +43,33 @@ def coalesce_blocks(blocks):
     return json_dict
 
 
-def global_optimization(optimization):
+def has_side_effects(instr):
+    side_effective = ["store", "print", "call"]
+    return "op" in instr and instr["op"] in side_effective
+
+
+def global_optimization(optimization_pass):
     def outer(prog):
         out = {"functions": []}
         for func in prog["functions"]:
             out_func = copy.deepcopy(func)
-            out_func["instrs"] = optimization(out_func["instrs"])
+            out_func["instrs"] = optimization_pass(out_func["instrs"])
+            out["functions"].append(out_func)
+        return out
+
+    return outer
+
+
+def local_optimization(optimization_pass):
+    def outer(prog):
+        out = {"functions": []}
+        blocks = parse_into_blocks(prog)
+        for func in prog["functions"]:
+            out_func = copy.deepcopy(func)
+            instrs = []
+            for _, block in blocks[func["name"]]:
+                instrs += optimization_pass(block)
+            out_func["instrs"] = instrs
             out["functions"].append(out_func)
         return out
 
