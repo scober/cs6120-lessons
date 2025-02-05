@@ -5,3 +5,8 @@ l*/utilities.py
 # ignore python interpreter's stuff
 */__pycache__/*
 __pycache__/*
+
+# I like to diff optimized programs against unoptimized ones, but don't need to
+#   commit those files
+*/optimized
+*/unoptimized
