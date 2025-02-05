@@ -53,3 +53,15 @@ def global_optimization(optimization):
         return out
 
     return outer
+
+
+def iterate_to_convergence(optimization_pass):
+    def outer(instrs):
+        old = None
+        new = instrs
+        while old != new:
+            old = new
+            new = optimization_pass(old)
+        return new
+
+    return outer
