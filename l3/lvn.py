@@ -19,25 +19,38 @@ def canonicalize(value, table):
     return value
 
 
-def construct_value(instr, environment, value_table):
+def construct_value(instr, environment, value_table, live_ins):
+    if instr["op"] == "id" and not any(
+        arg in live_ins
+        for arg in instr.get("args", [])
+        + instr.get("values", [])
+        + ([instr["value"]] if "value" in instr else [])
+    ):
+        return value_table[environment[instr["args"][0]]]
     value = (
-        (
-            ([instr["type"]] if "type" in instr else [])
-            + [instr["op"]]
-            + [environment[arg] for arg in instr.get("args", [])]
-            + ([instr["value"]] if "value" in instr else [])
-        ),
+        ([instr["type"]] if "type" in instr else [])
+        + [instr["op"]]
+        + [environment[arg] for arg in instr.get("args", [])]
+        + ([instr["value"]] if "value" in instr else [])
     )
     return tuple(canonicalize(value, value_table))
 
 
-def copy_value(instr, var_home):
-    return {
-        "op": "id",
-        "dest": instr["dest"],
-        "type": instr["type"],
-        "args": [var_home],
-    }
+def copy_value(instr, value, var_home):
+    if len(value) > 2 and value[1] == "const":
+        return {
+            "op": "const",
+            "dest": instr["dest"],
+            "type": instr["type"],
+            "value": value[-1],
+        }
+    else:
+        return {
+            "op": "id",
+            "dest": instr["dest"],
+            "type": instr["type"],
+            "args": [var_home],
+        }
 
 
 def freshen_var(var_name, rest_of_block, all_vars):
@@ -73,6 +86,7 @@ def local_value_numbering(block):
     value_table = []
     value_home = []
     environment = {}
+    live_ins = set()
 
     all_vars = all_vars_in_block(block)
 
@@ -82,17 +96,17 @@ def local_value_numbering(block):
             continue
         for arg in instr.get("args", []):
             if arg not in environment:
+                live_ins.add(arg)
                 environment[arg] = len(value_table)
                 value_table.append(arg)
                 value_home.append(arg)
 
-        value = construct_value(instr, environment, value_table)
+        value = construct_value(instr, environment, value_table, live_ins)
 
         dest = None
         if value in value_table:
             row_num = value_table.index(value)
-            var_home = value_home[row_num]
-            out.append(copy_value(instr, var_home))
+            out.append(copy_value(instr, value_table[row_num], value_home[row_num]))
             dest = instr["dest"]
         else:
             if "dest" in instr and not ut.has_side_effects(instr):
