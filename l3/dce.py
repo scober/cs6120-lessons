@@ -15,7 +15,7 @@ def global_simple_dead_code_elimination(instrs):
             used.update(instr["args"])
     out = []
     for instr in instrs:
-        if "dest" not in instr or instr["dest"] in used:
+        if "dest" not in instr or instr["dest"] in used or ut.has_side_effects(instr):
             out.append(instr)
     return out
 
