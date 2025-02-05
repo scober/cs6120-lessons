@@ -110,5 +110,18 @@ def dynamic(optimizer, brils):
     print()
 
 
+@main.command
+@click.argument("optimizer", nargs=1)
+@click.argument("brils", nargs=-1)
+def none(optimizer, brils):
+    """
+    Ensure that the optimization has not increased the number of dynamic instructions
+    """
+    for bril in brils:
+        check_output(bril, optimizer)
+        progress()
+    print()
+
+
 if __name__ == "__main__":
     main()
