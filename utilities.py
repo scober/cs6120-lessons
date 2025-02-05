@@ -53,7 +53,7 @@ def global_optimization(optimization_pass):
         out = {"functions": []}
         for func in prog["functions"]:
             out_func = copy.deepcopy(func)
-            out_func["instrs"] = optimization_pass(out_func["instrs"])
+            out_func["instrs"] = optimization_pass(copy.deepcopy(out_func["instrs"]))
             out["functions"].append(out_func)
         return out
 
@@ -68,7 +68,7 @@ def local_optimization(optimization_pass):
             out_func = copy.deepcopy(func)
             instrs = []
             for _, block in blocks[func["name"]]:
-                instrs += optimization_pass(block)
+                instrs += optimization_pass(copy.deepcopy(block))
             out_func["instrs"] = instrs
             out["functions"].append(out_func)
         return out
