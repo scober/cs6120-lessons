@@ -30,7 +30,7 @@ def run_bril(filename, optimizer):
 
     pipeline = f"bril2json < {filename} | {optimizer} | brili -p {args}"
     output = subprocess.getoutput(pipeline).splitlines()
-    dynamic_instructions = (
+    dynamic_instructions = int(
         output[-1].split(" ")[-1] if output[-1].startswith("total_dyn_inst:") else -1
     )
 
@@ -65,6 +65,8 @@ def check_static_instructions(bril, optimizer):
         unoptimized_static >= optimized_static
     ), f"optimization {optimizer} increased the number of static instructions in {bril}, from {unoptimized_static} to {optimized_static}"
 
+    return unoptimized_static, optimized_static
+
 
 def check_dynamic_instructions(bril, optimizer):
     _, unoptimized_dynamic = run_bril(bril, "cat")
@@ -74,9 +76,19 @@ def check_dynamic_instructions(bril, optimizer):
         unoptimized_dynamic >= optimized_dynamic
     ), f"optimization {optimizer} increased the number of dynamic instructions in {bril}, from {unoptimized_dynamic} to {optimized_dynamic}"
 
+    return unoptimized_dynamic, optimized_dynamic
+
 
 def progress():
     print(f"{Fore.green}.{Style.reset}", end="", flush=True)
+
+
+def print_instruction_counts(unoptimized, optimized):
+    diff = unoptimized - optimized
+    percent = int(100 * float(diff) / float(unoptimized))
+    print(
+        f"{diff} instructions saved, from {unoptimized} to {optimized}, that is {percent}%!"
+    )
 
 
 @click.group
@@ -91,11 +103,18 @@ def static(optimizer, brils):
     """
     Ensure that the optimization has not increased the number of static static instructions
     """
+    total_unoptimized_instructions = 0
+    total_optimized_instructions = 0
     for bril in brils:
         check_output(bril, optimizer)
-        check_static_instructions(bril, optimizer)
+        unopt, opt = check_static_instructions(bril, optimizer)
+        total_unoptimized_instructions += unopt
+        total_optimized_instructions += opt
         progress()
     print()
+    print_instruction_counts(
+        total_unoptimized_instructions, total_optimized_instructions
+    )
 
 
 @main.command
@@ -105,11 +124,18 @@ def dynamic(optimizer, brils):
     """
     Ensure that the optimization has not increased the number of dynamic instructions
     """
+    total_unoptimized_instructions = 0
+    total_optimized_instructions = 0
     for bril in brils:
         check_output(bril, optimizer)
-        check_dynamic_instructions(bril, optimizer)
+        unopt, opt = check_dynamic_instructions(bril, optimizer)
+        total_unoptimized_instructions += unopt
+        total_optimized_instructions += opt
         progress()
     print()
+    print_instruction_counts(
+        total_unoptimized_instructions, total_optimized_instructions
+    )
 
 
 @main.command
