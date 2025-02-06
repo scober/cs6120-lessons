@@ -15,7 +15,11 @@ def all_vars_in_block(block):
     return all_vars
 
 
-def canonicalize(value, table):
+def canonicalize(value):
+    if len(value) > 1 and value[1] in ["mul", "add", "eq", "and", "or"]:
+        assert len(value) == 4
+        value = value[:2] + sorted(value[2:])
+
     return value
 
 
@@ -33,7 +37,7 @@ def construct_value(instr, environment, value_table, live_ins):
         + [environment[arg] for arg in instr.get("args", [])]
         + ([instr["value"]] if "value" in instr else [])
     )
-    return tuple(canonicalize(value, value_table))
+    return tuple(canonicalize(value))
 
 
 def copy_value(instr, value, var_home):
@@ -68,10 +72,91 @@ def freshen_var(var_name, rest_of_block, all_vars):
     return fresh_var
 
 
-def local_value_number_instruction(instr, dest, value_home, environment):
+def fold_constants_into_instruction(instr, environment, value_table):
+    op = instr["op"]
+    if op == "ret":
+        # you can't return a constant value
+        return
+    instr["op"] = "const"
+
+    left = value_table[environment[instr["args"][0]]][-1] if "args" in instr else None
+    right = (
+        value_table[environment[instr["args"][1]]][-1]
+        if ("args" in instr and len(instr["args"]) > 1)
+        else None
+    )
+
+    # in a real compiler you might want your compiler to tell you were trying to
+    #   divide by zero
+    # here, to simplify testing, we will leave divides by zero in place
+    if op == "div" and right == 0:
+        instr["op"] = op
+        return
+
+    instr.pop("args", None)
+
+    # we should make sure these computations match the semantics of bril,
+    #   but let's just be sloppy for now
+    if op == "const":
+        pass
+    elif op == "add":
+        instr["value"] = left + right
+    elif op == "sub":
+        instr["value"] = left - right
+    elif op == "mul":
+        instr["value"] = left * right
+    elif op == "div":
+        instr["value"] = left / right
+    elif op == "jmp":
+        instr["op"] = "jmp"
+    elif op == "br":
+        instr["op"] = "jmp"
+        instr["labels"] = [instr["labels"][0]] if left else [instr["labels"][1]]
+    elif op == "eq":
+        instr["value"] = left == right
+    elif op == "lt":
+        instr["value"] = left < right
+    elif op == "gt":
+        instr["value"] = left > right
+    elif op == "le":
+        instr["value"] = left <= right
+    elif op == "ge":
+        instr["value"] = left >= right
+    elif op == "and":
+        instr["value"] = left and right
+    elif op == "or":
+        instr["value"] = left or right
+    elif op == "not":
+        instr["value"] = not left
+    else:
+        print(f"unsupported operation {op}")
+
+
+def fold_comparisons(instr):
+    instr.pop("args", None)
+    instr["value"] = instr["op"] in ["eq", "le", "ge"]
+    instr["op"] = "const"
+
+
+def local_value_number_instruction(
+    instr, dest, row_num, value_home, value_table, environment
+):
     oi = copy.deepcopy(instr)
     if ut.has_side_effects(instr):
         return oi
+
+    if (
+        len(instr.get("args", [])) == 2
+        and instr["args"][0] == instr["args"][1]
+        and instr.get("op", "") in ["eq", "le", "ge", "lt", "gt"]
+    ):
+        fold_comparisons(oi)
+    elif all("const" in value_table[environment[arg]] for arg in instr.get("args", [])):
+        fold_constants_into_instruction(oi, environment, value_table)
+    # if one of the folding optimizations ran, put the new const op in the table
+    if not row_num is None and oi["op"] == "const":
+        value_table[row_num] = construct_value(oi, {}, value_table, {})
+
     if "dest" in oi:
         oi["dest"] = dest
     if "args" in oi:
@@ -104,6 +189,7 @@ def local_value_numbering(block):
         value = construct_value(instr, environment, value_table, live_ins)
 
         dest = None
+        row_num = None
         if value in value_table:
             row_num = value_table.index(value)
             out.append(copy_value(instr, value_table[row_num], value_home[row_num]))
@@ -119,7 +205,9 @@ def local_value_numbering(block):
                 value_home.append(dest)
 
             out.append(
-                local_value_number_instruction(instr, dest, value_home, environment)
+                local_value_number_instruction(
+                    instr, dest, row_num, value_home, value_table, environment
+                )
             )
 
         if not ut.has_side_effects(instr):
