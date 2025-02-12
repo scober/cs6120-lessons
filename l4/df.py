@@ -9,7 +9,37 @@ import sys
 import click
 
 
-def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
+def data_flow_analysis(
+    ret,
+    worklist,
+    successors,
+    predecessors,
+    labels_to_blocks,
+    i,
+    o,
+    merge,
+    transfer,
+):
+    # this function is written as if it is a backward pass,
+    #   but it should work just as well for a forward pass
+    while len(worklist):
+        label, block = worklist.popleft()
+
+        ins = tuple(ret[inpt][i] for inpt in successors[label])
+        ret[label][o] = merge(ins)
+
+        in_before = ret[label][i]
+        in_after = transfer(copy.deepcopy(ret[label][o]), copy.deepcopy(block))
+        ret[label][i] = in_after
+
+        if in_before != in_after:
+            for pred in predecessors[label]:
+                worklist.append((pred, labels_to_blocks[pred]))
+
+    return ret
+
+
+def data_flow_prerequisites(prog, entry_init, general_init):
     blocks = ut.parse_into_blocks(prog)
     successors = ut.construct_cfg(blocks)
     predecessors = {label: [] for label in successors.keys()}
@@ -25,25 +55,53 @@ def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer)
         for l_and_b in blocks.values()
         for label, _ in l_and_b
     }
+    for label in ret:
+        if not predecessors[label]:
+            ret[label]["in"] = entry_init()
+
+    return blocks, successors, predecessors, labels_to_blocks, ret
+
+
+def forward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
+    blocks, successors, predecessors, labels_to_blocks, ret = data_flow_prerequisites(
+        prog, entry_init, general_init
+    )
+    worklist = collections.deque(
+        reversed(l_and_b for func in blocks.values() for l_and_b in func)
+    )
+
+    return data_flow_analysis(
+        ret,
+        worklist,
+        predecessors,
+        successors,
+        labels_to_blocks,
+        "out",
+        "in",
+        merge,
+        transfer,
+    )
+
+
+def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
+    blocks, successors, predecessors, labels_to_blocks, ret = data_flow_prerequisites(
+        prog, entry_init, general_init
+    )
     worklist = collections.deque(
         l_and_b for func in blocks.values() for l_and_b in func
     )
 
-    while len(worklist):
-        label, block = worklist.popleft()
-
-        ins = tuple(ret[inpt]["in"] for inpt in successors[label])
-        ret[label]["out"] = merge(ins)
-
-        in_before = ret[label]["in"]
-        in_after = transfer(copy.deepcopy(ret[label]["out"]), copy.deepcopy(block))
-        ret[label]["in"] = in_after
-
-        if in_before != in_after:
-            for pred in predecessors[label]:
-                worklist.append((pred, labels_to_blocks[pred]))
-
-    return ret
+    return data_flow_analysis(
+        ret,
+        worklist,
+        successors,
+        predecessors,
+        labels_to_blocks,
+        "in",
+        "out",
+        merge,
+        transfer,
+    )
 
 
 def print_set_analysis(analysis):
