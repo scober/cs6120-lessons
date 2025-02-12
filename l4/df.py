@@ -171,6 +171,7 @@ def interval_analysis():
                 left = instr["args"][0]
                 right = instr["args"][1]
                 if left not in intervals_out or right not in intervals_out:
+                    intervals_out.pop(instr["dest"], None)
                     continue
                 left = intervals_out[left]
                 right = intervals_out[right]
