@@ -1,0 +1,8 @@
+b0   ::  in - {cond}            //   out - {a, b, c, cond, d}
+l    ::  in - {b, c, cond, d}   //   out - {a, b, c, d}
+r    ::  in - {a, c, cond, d}   //   out - {a, b, c, d}
+ll   ::  in - {a, b, d}         //   out - {a, b, c, d}
+lr   ::  in - {a, b, c}         //   out - {a, b, c, d}
+rl   ::  in - {a, b, c}         //   out - {a, b, c, d}
+rr   ::  in - {a, b, d}         //   out - {a, b, c, d}
+end  ::  in - {a, b, c, d}      //   out - {}

@@ -1,0 +1,3 @@
+[envs.live]
+command = "bril2json < {filename} | python df.py live"
+output.live = "-"

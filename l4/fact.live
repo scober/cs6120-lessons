@@ -1,0 +1,4 @@
+b0      ::  in - {a}   //   out - {}
+b1      ::  in - {a}   //   out - {a}
+then.0  ::  in - {}    //   out - {}
+else.0  ::  in - {a}   //   out - {}

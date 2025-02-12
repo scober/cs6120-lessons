@@ -1,0 +1,4 @@
+b0     ::  in - {cond}   //   out - {a, b}
+left   ::  in - {b}      //   out - {a, b}
+right  ::  in - {a}      //   out - {a, b}
+end    ::  in - {a, b}   //   out - {}
