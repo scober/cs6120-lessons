@@ -43,6 +43,24 @@ def coalesce_blocks(blocks):
     return json_dict
 
 
+# TODO: should I create a unique exit block if one does not exist?
+def construct_cfg(labels_and_blocks):
+    cfg = {}
+    for func, l_and_b in labels_and_blocks.items():
+        for i, (label, block) in enumerate(l_and_b):
+            cfg[label] = []
+            term = block[-1]
+            if term.get("op", "") in ("jmp", "br"):
+                for dest in term["labels"]:
+                    cfg[label].append(dest)
+            elif term.get("op", "") == "ret":
+                # ret indicates the end of a block
+                pass
+            elif i < len(l_and_b) - 1:
+                cfg[label].append(l_and_b[i + 1][0])
+    return cfg
+
+
 def has_side_effects(instr):
     side_effective = ["store", "print", "call"]
     return "op" in instr and instr["op"] in side_effective
