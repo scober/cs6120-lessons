@@ -1,0 +1,37 @@
+# ARGS: true
+@main(cond: bool) {
+  a: int = const 1;
+  b: int = const 2;
+  c: int = const 3;
+  d: int = const 4;
+  br cond .one .two;
+.one:
+  c: int = div d b;
+  b: int = mul b b;
+  a: int = add c d;
+  d: int = mul a b;
+  br cond .three .four;
+.two:
+  b: int = mul a b;
+  a: int = mul b b;
+  c: int = div c c;
+  d: int = add c c;
+  br cond .three .four;
+.three:
+  b: int = mul b b;
+  a: int = mul a b;
+  c: int = div c c;
+  d: int = add c c;
+  jmp .five;
+.four:
+  c: int = div d b;
+  b: int = mul b b;
+  a: int = add c d;
+  d: int = mul a b;
+  jmp .five;
+.five:
+  a: int = const 5;
+  b: int = const 6;
+  c: int = const 7;
+  d: int = const 8;
+}

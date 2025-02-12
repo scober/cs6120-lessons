@@ -1,0 +1,6 @@
+b0     ::  in - {cond}            //   out - {a, b, c, cond, d}
+one    ::  in - {b, cond, d}      //   out - {a, b, c, d}
+two    ::  in - {a, b, c, cond}   //   out - {a, b, c, d}
+three  ::  in - {a, b, c}         //   out - {}
+four   ::  in - {b, d}            //   out - {}
+five   ::  in - {}                //   out - {}

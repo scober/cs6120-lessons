@@ -1,0 +1,18 @@
+b0                   ::  in - {in}                                        //   out - {in, index, not_finished, one, ten, zero}
+for.cond             ::  in - {in, index, not_finished, one, ten, zero}   //   out - {in, index, not_finished, one, ten, zero}
+for.body             ::  in - {in, index, not_finished, one, ten, zero}   //   out - {in, index, not_finished, one, ten, zero}
+if.true              ::  in - {in, index, one, ten, zero}                 //   out - {in, index, not_finished, one, ten, zero}
+if.false             ::  in - {in, index, not_finished, one, ten, zero}   //   out - {in, index, not_finished, one, ten, zero}
+for.end              ::  in - {in, index, one}                            //   out - {}
+b5                   ::  in - {base, exp}                                 //   out - {base, exp, not_finished, one, res, zero}
+for.cond.pow         ::  in - {base, exp, not_finished, one, res, zero}   //   out - {base, exp, not_finished, one, res, zero}
+for.body.pow         ::  in - {base, exp, not_finished, one, res, zero}   //   out - {base, exp, not_finished, one, res, zero}
+if.true.pow          ::  in - {base, exp, one, res, zero}                 //   out - {base, exp, not_finished, one, res, zero}
+if.false.pow         ::  in - {base, exp, not_finished, one, res, zero}   //   out - {base, exp, not_finished, one, res, zero}
+for.end.pow          ::  in - {res}                                       //   out - {}
+b11                  ::  in - {in, len}                                   //   out - {in, len, ten, two}
+if.true.palindrome   ::  in - {}                                          //   out - {is_palindrome}
+if.false.palindrome  ::  in - {in, len, ten, two}                         //   out - {in, left, len, power, right, ten, two}
+if.true.mirror       ::  in - {in, left, len, power, right, ten, two}     //   out - {is_palindrome}
+if.false.mirror      ::  in - {}                                          //   out - {is_palindrome}
+if.end.palindrome    ::  in - {is_palindrome}                             //   out - {}
