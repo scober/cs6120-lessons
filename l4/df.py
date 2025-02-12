@@ -191,7 +191,11 @@ def interval_analysis():
                 elif instr.get("op", "") == "div":
                     endpoints = [x / y for x in left for y in right]
                     intervals_out[instr["dest"]] = (min(endpoints), max(endpoints))
-        return {var: pin(interval) for var, interval in intervals_out.items()}
+        return {
+            var: interval
+            for var, interval in intervals_out.items()
+            if interval[0] > -1000 and interval[1] < 1000
+        }
 
     def merge(ins):
         out = {}
