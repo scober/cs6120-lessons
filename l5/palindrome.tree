@@ -1,0 +1,18 @@
+b0                   ::  strictly dominates - {for.cond}
+b11                  ::  strictly dominates - {if.end.palindrome, if.false.palindrome, if.true.palindrome}
+b5                   ::  strictly dominates - {for.cond.pow}
+for.body             ::  strictly dominates - {if.false, if.true}
+for.body.pow         ::  strictly dominates - {if.false.pow, if.true.pow}
+for.cond             ::  strictly dominates - {for.body, for.end}
+for.cond.pow         ::  strictly dominates - {for.body.pow, for.end.pow}
+for.end              ::  strictly dominates - {}
+for.end.pow          ::  strictly dominates - {}
+if.end.palindrome    ::  strictly dominates - {}
+if.false             ::  strictly dominates - {}
+if.false.mirror      ::  strictly dominates - {}
+if.false.palindrome  ::  strictly dominates - {if.false.mirror, if.true.mirror}
+if.false.pow         ::  strictly dominates - {}
+if.true              ::  strictly dominates - {}
+if.true.mirror       ::  strictly dominates - {}
+if.true.palindrome   ::  strictly dominates - {}
+if.true.pow          ::  strictly dominates - {}

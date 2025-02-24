@@ -1,0 +1,4 @@
+b0     ::  strictly dominates - {end, left, right}
+end    ::  strictly dominates - {}
+left   ::  strictly dominates - {}
+right  ::  strictly dominates - {}

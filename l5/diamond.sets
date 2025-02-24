@@ -1,0 +1,4 @@
+b0     ::  dominated by - {b0}
+end    ::  dominated by - {b0, end}
+left   ::  dominated by - {b0, left}
+right  ::  dominated by - {b0, right}

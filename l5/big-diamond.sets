@@ -1,0 +1,8 @@
+b0   ::  dominated by - {b0}
+end  ::  dominated by - {b0, end}
+l    ::  dominated by - {b0, l}
+ll   ::  dominated by - {b0, l, ll}
+lr   ::  dominated by - {b0, l, lr}
+r    ::  dominated by - {b0, r}
+rl   ::  dominated by - {b0, r, rl}
+rr   ::  dominated by - {b0, r, rr}

@@ -1,0 +1,4 @@
+b0      ::  strictly dominates - {}
+b1      ::  strictly dominates - {else.0, then.0}
+else.0  ::  strictly dominates - {}
+then.0  ::  strictly dominates - {}

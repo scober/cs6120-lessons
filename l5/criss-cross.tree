@@ -1,0 +1,6 @@
+b0     ::  strictly dominates - {five, four, one, three, two}
+five   ::  strictly dominates - {}
+four   ::  strictly dominates - {}
+one    ::  strictly dominates - {}
+three  ::  strictly dominates - {}
+two    ::  strictly dominates - {}

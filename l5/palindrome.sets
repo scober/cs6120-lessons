@@ -1,0 +1,18 @@
+b0                   ::  dominated by - {b0}
+b11                  ::  dominated by - {b11}
+b5                   ::  dominated by - {b5}
+for.body             ::  dominated by - {b0, for.body, for.cond}
+for.body.pow         ::  dominated by - {b5, for.body.pow, for.cond.pow}
+for.cond             ::  dominated by - {b0, for.cond}
+for.cond.pow         ::  dominated by - {b5, for.cond.pow}
+for.end              ::  dominated by - {b0, for.cond, for.end}
+for.end.pow          ::  dominated by - {b5, for.cond.pow, for.end.pow}
+if.end.palindrome    ::  dominated by - {b11, if.end.palindrome}
+if.false             ::  dominated by - {b0, for.body, for.cond, if.false}
+if.false.mirror      ::  dominated by - {b11, if.false.mirror, if.false.palindrome}
+if.false.palindrome  ::  dominated by - {b11, if.false.palindrome}
+if.false.pow         ::  dominated by - {b5, for.body.pow, for.cond.pow, if.false.pow}
+if.true              ::  dominated by - {b0, for.body, for.cond, if.true}
+if.true.mirror       ::  dominated by - {b11, if.false.palindrome, if.true.mirror}
+if.true.palindrome   ::  dominated by - {b11, if.true.palindrome}
+if.true.pow          ::  dominated by - {b5, for.body.pow, for.cond.pow, if.true.pow}

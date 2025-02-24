@@ -1,0 +1,8 @@
+b0   ::  strictly dominates - {end, l, r}
+end  ::  strictly dominates - {}
+l    ::  strictly dominates - {ll, lr}
+ll   ::  strictly dominates - {}
+lr   ::  strictly dominates - {}
+r    ::  strictly dominates - {rl, rr}
+rl   ::  strictly dominates - {}
+rr   ::  strictly dominates - {}

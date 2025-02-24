@@ -1,0 +1,6 @@
+b0     ::  dominated by - {b0}
+five   ::  dominated by - {b0, five}
+four   ::  dominated by - {b0, four}
+one    ::  dominated by - {b0, one}
+three  ::  dominated by - {b0, three}
+two    ::  dominated by - {b0, two}
