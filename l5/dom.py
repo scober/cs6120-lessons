@@ -59,6 +59,14 @@ def print_dominator_tree_text(tree):
         )
 
 
+def print_dominator_tree_dot(tree):
+    print("digraph dominator_tree {")
+    for label, children in tree.items():
+        for child in children:
+            print(f'  "{label}" -> "{child}";')
+    print("}")
+
+
 def dominators(prog):
     blocks, succs, preds, labels_to_blocks, entry_blocks = ut.the_stuff(prog)
 
@@ -149,7 +157,7 @@ def dominator_tree_command(dot, validate):
 
     dom_tree = dominator_tree(doms)
 
-    print_dominator_tree_text(dom_tree)
+    print_dominator_tree_dot(dom_tree) if dot else print_dominator_tree_text(dom_tree)
 
 
 if __name__ == "__main__":
