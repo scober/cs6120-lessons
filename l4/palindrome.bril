@@ -64,17 +64,17 @@ not_finished: bool = const true;
   right: int = sub in v2;
   is_equal: bool = eq left right;
   br is_equal .if.true.mirror .if.false.mirror;
-  .if.true.mirror:
-   temp: int = mul power left;
-   temp: int = sub in temp;
-   temp: int = sub temp right;
-   next_in: int = div temp ten;
-   next_len: int = sub len two;
-   is_palindrome: bool = call @palindrome next_in next_len;
-   jmp .if.end.palindrome;
-  .if.false.mirror:
-   is_palindrome: bool = const false;
-   jmp .if.end.palindrome;
+ .if.true.mirror:
+  temp: int = mul power left;
+  temp: int = sub in temp;
+  temp: int = sub temp right;
+  next_in: int = div temp ten;
+  next_len: int = sub len two;
+  is_palindrome: bool = call @palindrome next_in next_len;
+  jmp .if.end.palindrome;
+ .if.false.mirror:
+  is_palindrome: bool = const false;
+  jmp .if.end.palindrome;
  .if.end.palindrome:
   ret is_palindrome;
 }
