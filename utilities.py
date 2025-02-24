@@ -173,21 +173,27 @@ def predecessors(succs):
     return preds
 
 
-def data_flow_prerequisites(prog, entry_init, general_init):
+def the_stuff(prog):
     blocks = parse_into_blocks(prog)
     succs = construct_cfg(blocks)
     preds = predecessors(succs)
     labels_to_blocks = {
         label: block for l_and_b in blocks.values() for label, block in l_and_b
     }
+    entry_blocks = [func[0][0] for func in blocks.values()]
+
+    return blocks, succs, preds, labels_to_blocks, entry_blocks
+
+
+def data_flow_prerequisites(prog, entry_init, general_init):
+    blocks, succs, preds, labels_to_blocks, entry_blocks = the_stuff(prog)
 
     ret = {
         label: {"in": general_init(), "out": general_init()}
         for l_and_b in blocks.values()
         for label, _ in l_and_b
     }
-    for func in blocks:
-        entry_label = blocks[func][0][0]
+    for entry_label in entry_blocks:
         ret[entry_label]["in"] = entry_init()
 
     return blocks, succs, preds, labels_to_blocks, ret
