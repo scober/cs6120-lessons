@@ -1,0 +1,8 @@
+b0   ::  has dominance frontier - {}
+end  ::  has dominance frontier - {}
+l    ::  has dominance frontier - {end}
+ll   ::  has dominance frontier - {}
+lr   ::  has dominance frontier - {}
+r    ::  has dominance frontier - {end}
+rl   ::  has dominance frontier - {}
+rr   ::  has dominance frontier - {}

@@ -5,3 +5,7 @@ output.sets = "-"
 [envs.tree]
 command = "bril2json < {filename} | python dom.py tree --validate"
 output.tree = "-"
+
+[envs.front]
+command = "bril2json < {filename} | python dom.py front --validate"
+output.front = "-"

@@ -33,16 +33,17 @@ def validate_dominators(prog, doms):
         )
 
 
-def print_dominators(dominators):
+def print_dominators(dominators, description):
     def fmt(labels):
         return ", ".join(sorted(labels))
 
     longest_label = max(len(label) for label in dominators)
-    longest_in = max(len(fmt(dominators[label])) for label in dominators)
 
     for label in sorted(dominators):
         doms = fmt(dominators[label])
-        print(f'{label} {" "*(longest_label-len(label))} ::  dominated by - {{{doms}}}')
+        print(
+            f'{label} {" "*(longest_label-len(label))} ::  {description} - {{{doms}}}'
+        )
 
 
 def print_dominator_tree_text(tree):
@@ -50,7 +51,6 @@ def print_dominator_tree_text(tree):
         return ", ".join(sorted(children))
 
     longest_label = max(len(label) for label in tree)
-    longest_children = max(len(fmt(tree[label])) for label in tree)
 
     for label in sorted(tree):
         children = fmt(tree[label])
@@ -108,6 +108,22 @@ def dominator_tree(doms):
     return tree
 
 
+def dominator_frontiers(doms, preds):
+    # turn this into strict dominators
+    d = {
+        dominatee: set(dom for dom in dominators if dom != dominatee)
+        for dominatee, dominators in doms.items()
+    }
+    return {
+        label: [
+            l
+            for l in d.keys()
+            if label not in d[l] and any(label in d[pred] for pred in preds[l])
+        ]
+        for label in d.keys()
+    }
+
+
 @click.group
 def main():
     pass
@@ -131,7 +147,7 @@ def dominator_sets_command(validate):
         print(f"VALIDATION FAILED")
         exit(1)
 
-    print_dominators(doms)
+    print_dominators(doms, "dominated by")
 
 
 @main.command(name="tree")
@@ -158,6 +174,30 @@ def dominator_tree_command(dot, validate):
     dom_tree = dominator_tree(doms)
 
     print_dominator_tree_dot(dom_tree) if dot else print_dominator_tree_text(dom_tree)
+
+
+@main.command(name="front")
+@click.option(
+    "--validate",
+    is_flag=True,
+    help="run (expensive) validation on generated dominator frontiers",
+)
+def dominator_frontier_command(validate):
+    """
+    Compute dominator sets of basic blocks of bril program passed via stdin
+    """
+    prog = json.load(sys.stdin)
+
+    doms = dominators(prog)
+
+    if validate and not validate_dominators(prog, doms):
+        print(f"VALIDATION FAILED")
+        exit(1)
+
+    _, _, preds, _, _ = ut.the_stuff(prog)
+    frontiers = dominator_frontiers(doms, preds)
+
+    print_dominators(frontiers, "has dominance frontier")
 
 
 if __name__ == "__main__":
