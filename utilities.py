@@ -108,6 +108,8 @@ def iterate_to_convergence(optimization_pass):
     return outer
 
 
+# did I get post-order backwards?
+# yes, this function is not post-order traversal
 def post_order(succs):
     # because this is a generator, we don't want to be sensitive to
     #   changes to the input during our runtime
