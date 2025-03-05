@@ -240,3 +240,79 @@ def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer)
         merge,
         transfer,
     )
+
+
+def dominators(prog):
+    blocks, succs, preds, labels_to_blocks, entry_blocks = the_stuff(prog)
+
+    doms_after = {
+        label: set(l for l in labels_to_blocks.keys())
+        for label in labels_to_blocks.keys()
+    }
+    doms = {}
+
+    while doms != doms_after:
+        doms = doms_after
+        doms_after = copy.deepcopy(doms)
+        for label in reverse_post_order(succs):
+            if label in entry_blocks:
+                doms_after[label] = set([label])
+            else:
+                pred_doms = set(l for l in labels_to_blocks.keys())
+                for p in preds[label]:
+                    pred_doms &= doms_after[p]
+                doms_after[label] = set([label]).union(pred_doms)
+
+    return doms
+
+
+def dominator_tree(doms):
+    d = collections.OrderedDict(doms)
+    tree = {entry: [] for entry in doms}
+
+    while len(d):
+        label, dominators = d.popitem(last=False)
+        if dominators == set([label]):
+            for dtee, dtors in d.items():
+                if dtors == set((label, dtee)):
+                    tree[label].append(dtee)
+                d[dtee] = set(dom for dom in dtors if dom != label)
+        else:
+            d[label] = dominators
+
+    return tree
+
+
+def dominator_frontiers(doms, preds):
+    # turn this into strict dominators
+    sd = {
+        dominatee: set(dom for dom in dominators if dom != dominatee)
+        for dominatee, dominators in doms.items()
+    }
+    return {
+        label: [
+            l
+            for l in doms.keys()
+            if label not in sd[l] and any(label in doms[pred] for pred in preds[l])
+        ]
+        for label in doms.keys()
+    }
+
+
+# this is a fold, maybe write it that way?
+def all_vars_in_block(block):
+    all_vars = set()
+    for instr in block:
+        all_vars.add(instr.get("dest", None))
+        all_vars |= set(instr.get("args", []))
+    all_vars.discard(None)
+    return all_vars
+
+
+# this is also a fold
+def all_vars_in_prog(prog):
+    all_vars = set()
+    _, _, _, labels_to_blocks, _ = the_stuff(prog)
+    for block in labels_to_blocks.values():
+        all_vars |= all_vars_in_block(block)
+    return all_vars
