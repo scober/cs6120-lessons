@@ -20,6 +20,12 @@ def phis(block):
             yield instr
 
 
+def upsilons(block):
+    for instr in block:
+        if instr.get("op", "") == "set":
+            yield instr
+
+
 def already_phied(var, block):
     return any(phi["dest"] == var for phi in phis(block))
 
