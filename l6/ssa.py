@@ -119,51 +119,53 @@ def prune_cfg(instrs):
 
 
 @ut.global_optimization
-def to_ssa_form(instrs):
-    prog = {"functions": [{"instrs": instrs, "name": "dummy"}]}
-    blocks, succs, preds, labels_to_blocks, entry_blocks = ut.the_stuff(prog)
-    frontiers = ut.dominator_frontiers(ut.dominators(prog), preds)
-    all_vars = ut.all_vars_in_prog(prog)
+def to_ssa_form(instrs, function_args):
+    instrs = prune_cfg(instrs)
 
-    phiify(labels_to_blocks, succs, all_vars, frontiers)
+    prog = {"functions": [{"instrs": instrs, "name": "dummy"}]}
+    if function_args:
+        prog["functions"][0]["args"] = function_args
+
+    # if the first block can be jumped to, it has explicit entry points from
+    #   those jumps and an implicit entry point from the start of the function
+    #   -- let's just make that entry point explicit
+    if "label" in instrs[0]:
+        labels = set(instr.get("label", "") for instr in instrs)
+        label_id = 0
+        while f"b.{label_id}" in labels:
+            label_id += 1
+        prog["functions"][0]["instrs"].insert(0, {"label": f"dummy.{label_id}"})
+
+    blocks, succs, preds, labels_to_blocks, entry_blocks = ut.the_stuff(prog)
 
     assert len(entry_blocks) == 1, str(entry_blocks)
-    rename_vars({var: 0 for var in all_vars}, labels_to_blocks, succs, entry_blocks[0])
+    entry_block = entry_blocks[0]
+
+    doms = ut.dominators(prog)
+    frontiers = ut.dominator_frontiers(doms, preds)
+    dom_tree = ut.dominator_tree(doms)
+
+    all_vars = ut.all_vars_in_prog(prog)
+
+    add_undefs(
+        ut.all_vars_in_prog_with_types(prog)[1].items(),
+        labels_to_blocks[entry_block],
+    )
+
+    phiify(labels_to_blocks, succs, preds, all_vars, frontiers)
+
+    rename_vars(
+        {var: var for var in all_vars},
+        {var: 0 for var in all_vars},
+        labels_to_blocks,
+        succs,
+        preds,
+        dom_tree,
+        entry_block,
+    )
 
     # I wish Python just had a function called fold
     return functools.reduce(lambda acc, tup: acc + tup[1], blocks["dummy"], [])
-
-
-@ut.local_optimization
-def variable_renaming(instrs):
-    out = []
-    most_recent_name = {}
-    for instr in instrs:
-        new_instr = copy.deepcopy(instr)
-        if "args" in new_instr:
-            new_instr["args"] = [
-                (
-                    arg + "." + str(most_recent_name[arg])
-                    if arg in most_recent_name
-                    else arg
-                )
-                for arg in new_instr["args"]
-            ]
-        if "dest" in new_instr:
-            dest = new_instr["dest"]
-            if dest not in most_recent_name:
-                most_recent_name[dest] = 0
-            most_recent_name[dest] += 1
-            new_instr["dest"] = dest + "." + str(most_recent_name[dest])
-
-        out.append(new_instr)
-
-    return out
-
-
-@ut.global_optimization
-def phi_nodes(instrs):
-    return instrs
 
 
 @ut.global_optimization
