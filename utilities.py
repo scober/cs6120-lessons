@@ -13,20 +13,20 @@ def parse_into_blocks(prog):
         label_number += 1
         label = f"b{label_number}"
         cur = []
-        for i in f["instrs"]:
-            if "label" in i:
+        for instr in f["instrs"]:
+            if "label" in instr:
                 if len(cur) != 0:
                     blocks.append((label, cur))
-                cur = [i]
-                label = i["label"]
-            elif i["op"] in ("jmp", "br", "ret"):
-                cur.append(i)
+                cur = [instr]
+                label = instr["label"]
+            elif instr["op"] in ("jmp", "br", "ret"):
+                cur.append(instr)
                 blocks.append((label, cur))
                 cur = []
                 label_number += 1
                 label = f"b{label_number}"
             else:
-                cur.append(i)
+                cur.append(instr)
         if len(cur) != 0:
             blocks.append((label, cur))
         all_blocks[f["name"]] = blocks
