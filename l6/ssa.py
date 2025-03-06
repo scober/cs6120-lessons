@@ -68,21 +68,54 @@ def phiify(labels_to_blocks, succs, preds, all_vars, frontiers):
 def rename_vars(var_stack, var_ids, labels_to_blocks, succs, preds, dom_tree, label):
     old_var_stack = copy.deepcopy(var_stack)
     block = labels_to_blocks[label]
+
     for instr in block:
         if "args" in instr:
-            instr["args"] = [
-                f"{arg}{'.' + str(var_stack[arg]) if var_stack[arg] else ''}"
-                for arg in instr["args"]
-            ]
+            if instr.get("op", "") == "set":
+                arg = instr["args"][1]
+                instr["args"] = instr["args"][:1] + [var_stack[arg]]
+            else:
+                instr["args"] = [var_stack[arg] for arg in instr["args"]]
         if "dest" in instr:
             dest = instr["dest"]
-            var_stack[dest] += 1
-            instr["dest"] = f"{dest}.{var_stack[dest]}"
-        for sl in succs[label]:
-            succ = labels_to_blocks[sl]
-            for phi in phis(succ):
-                # TODO
-                pass
+            var_ids[dest] += 1
+            var_stack[dest] = f"{dest}.{var_ids[dest]}"
+            instr["dest"] = var_stack[dest]
+            # update predecessors' upsilon nodes
+            # if two of a block's successors both want me to set the same value,
+            #   I will have two identical set instructions but I only want to
+            #   update the shadow destination of one per successor
+            if instr.get("op", "") == "get":
+                for pred in preds[label]:
+                    patched_upsilons = set()
+                    for pi in upsilons(labels_to_blocks[pred]):
+                        if pi["args"][0] == dest and dest not in patched_upsilons:
+                            patched_upsilons.add(dest)
+                            pi["args"] = [var_stack[dest]] + pi["args"][1:]
+
+    for dominated in dom_tree[label]:
+        rename_vars(
+            var_stack, var_ids, labels_to_blocks, succs, preds, dom_tree, dominated
+        )
+    # I am never sure what Python's pass-by-reference semantics are...
+    #
+    # ...this seems safe though
+    for var in var_stack:
+        var_stack[var] = old_var_stack[var]
+
+
+def prune_cfg(instrs):
+    prog = {"functions": [{"instrs": instrs, "name": "dummy"}]}
+    blocks, succs, preds, labels_to_blocks, entry_blocks = ut.the_stuff(prog)
+
+    old_num_blocks = 0
+    while len(blocks["dummy"]) != old_num_blocks:
+        old_num_blocks = len(blocks["dummy"])
+        blocks["dummy"] = [
+            (l, b) for l, b in blocks["dummy"] if preds[l] or l in entry_blocks
+        ]
+
+    return functools.reduce(lambda acc, tup: acc + tup[1], blocks["dummy"], [])
 
 
 @ut.global_optimization
