@@ -254,6 +254,7 @@ def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer)
 
 def dominators(prog):
     blocks, succs, preds, labels_to_blocks, entry_blocks = the_stuff(prog)
+    ners = set(non_entry_roots(succs))
 
     doms_after = {
         label: set(l for l in labels_to_blocks.keys())
@@ -317,6 +318,14 @@ def all_vars_in_block(block):
         all_vars |= set(instr.get("args", []))
     all_vars.discard(None)
     return all_vars
+
+
+def all_dests_in_block_with_types(block):
+    all_dests = {}
+    for instr in block:
+        all_dests[instr.get("dest", None)] = instr.get("type", None)
+    all_dests.pop(None, None)
+    return all_dests
 
 
 # this is also a fold
