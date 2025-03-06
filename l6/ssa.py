@@ -41,7 +41,7 @@ def add_undefs(all_vars_with_types, entry):
         ut.prepend_to_block({"op": "undef", "type": tipe, "dest": var}, entry)
 
 
-def phiify(labels_to_blocks, succs, all_vars, frontiers):
+def phiify(labels_to_blocks, succs, preds, all_vars, frontiers):
     for var in all_vars:
         definitions = [
             l_and_b
@@ -65,7 +65,8 @@ def phiify(labels_to_blocks, succs, all_vars, frontiers):
             i += 1
 
 
-def rename_vars(var_stack, labels_to_blocks, succs, label):
+def rename_vars(var_stack, var_ids, labels_to_blocks, succs, preds, dom_tree, label):
+    old_var_stack = copy.deepcopy(var_stack)
     block = labels_to_blocks[label]
     for instr in block:
         if "args" in instr:
