@@ -79,7 +79,7 @@ def dominators(prog):
     while doms != doms_after:
         doms = doms_after
         doms_after = copy.deepcopy(doms)
-        for label in ut.reverse_post_order(succs):
+        for label in ut.reverse_post_order(succs, entry_blocks):
             if label in entry_blocks:
                 doms_after[label] = set([label])
             else:

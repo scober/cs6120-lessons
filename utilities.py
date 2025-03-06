@@ -73,7 +73,9 @@ def global_optimization(optimization_pass):
         out = {"functions": []}
         for func in prog["functions"]:
             out_func = copy.deepcopy(func)
-            out_func["instrs"] = optimization_pass(copy.deepcopy(out_func["instrs"]))
+            out_func["instrs"] = optimization_pass(
+                copy.deepcopy(out_func["instrs"]), out_func.get("args", [])
+            )
             out["functions"].append(out_func)
         return out
 

@@ -169,7 +169,7 @@ def to_ssa_form(instrs, function_args):
 
 
 @ut.global_optimization
-def phi_to_id(instrs):
+def phi_to_id(instrs, function_args):
     return instrs
 
 

@@ -8,7 +8,7 @@ import utilities as ut
 
 @ut.global_optimization
 @ut.iterate_to_convergence
-def global_simple_dead_code_elimination(instrs):
+def global_simple_dead_code_elimination(instrs, function_args):
     used = set()
     for instr in instrs:
         if "args" in instr:
