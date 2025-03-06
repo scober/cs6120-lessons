@@ -57,24 +57,26 @@ def check_output(bril, optimizer):
     ), f"optimization {optimizer} broke file {bril}, turned {unoptimized_output} into {optimized_output}"
 
 
-def check_static_instructions(bril, optimizer):
+def check_static_instructions(bril, optimizer, must_improve):
     unoptimized_static = count_static_instructions(bril, "cat")
     optimized_static = count_static_instructions(bril, optimizer)
 
-    assert (
-        unoptimized_static >= optimized_static
-    ), f"optimization {optimizer} increased the number of static instructions in {bril}, from {unoptimized_static} to {optimized_static}"
+    if must_improve:
+        assert (
+            unoptimized_static >= optimized_static
+        ), f"optimization {optimizer} increased the number of static instructions in {bril}, from {unoptimized_static} to {optimized_static}"
 
     return unoptimized_static, optimized_static
 
 
-def check_dynamic_instructions(bril, optimizer):
+def check_dynamic_instructions(bril, optimizer, must_improve):
     _, unoptimized_dynamic = run_bril(bril, "cat")
     _, optimized_dynamic = run_bril(bril, optimizer)
 
-    assert (
-        unoptimized_dynamic >= optimized_dynamic
-    ), f"optimization {optimizer} increased the number of dynamic instructions in {bril}, from {unoptimized_dynamic} to {optimized_dynamic}"
+    if must_improve:
+        assert (
+            unoptimized_dynamic >= optimized_dynamic
+        ), f"optimization {optimizer} increased the number of dynamic instructions in {bril}, from {unoptimized_dynamic} to {optimized_dynamic}"
 
     return unoptimized_dynamic, optimized_dynamic
 
@@ -99,7 +101,8 @@ def main():
 @main.command
 @click.argument("optimizer", nargs=1)
 @click.argument("brils", nargs=-1)
-def static(optimizer, brils):
+@click.option("--must-improve", is_flag=True)
+def static(optimizer, brils, must_improve):
     """
     Ensure that the optimization has not increased the number of static static instructions
     """
@@ -107,7 +110,7 @@ def static(optimizer, brils):
     total_optimized_instructions = 0
     for bril in brils:
         check_output(bril, optimizer)
-        unopt, opt = check_static_instructions(bril, optimizer)
+        unopt, opt = check_static_instructions(bril, optimizer, must_improve)
         total_unoptimized_instructions += unopt
         total_optimized_instructions += opt
         progress()
@@ -120,7 +123,8 @@ def static(optimizer, brils):
 @main.command
 @click.argument("optimizer", nargs=1)
 @click.argument("brils", nargs=-1)
-def dynamic(optimizer, brils):
+@click.option("--must-improve", is_flag=True)
+def dynamic(optimizer, brils, must_improve):
     """
     Ensure that the optimization has not increased the number of dynamic instructions
     """
@@ -128,7 +132,7 @@ def dynamic(optimizer, brils):
     total_optimized_instructions = 0
     for bril in brils:
         check_output(bril, optimizer)
-        unopt, opt = check_dynamic_instructions(bril, optimizer)
+        unopt, opt = check_dynamic_instructions(bril, optimizer, must_improve)
         total_unoptimized_instructions += unopt
         total_optimized_instructions += opt
         progress()
@@ -143,7 +147,7 @@ def dynamic(optimizer, brils):
 @click.argument("brils", nargs=-1)
 def none(optimizer, brils):
     """
-    Ensure that the optimization has not increased the number of dynamic instructions
+    Just check that optimization has not changed behavior of program
     """
     for bril in brils:
         check_output(bril, optimizer)
