@@ -36,11 +36,9 @@ def grab_type(var, block):
             return instr["type"]
 
 
-def append_upsilon(block, var, tipe):
-    index = len(block)
-    if block[-1].get("op", "") in ["jmp", "br"]:
-        index -= 1
-    block.insert(index, {"op": "set", "type": tipe, "args": [var, var]})
+def add_undefs(all_vars_with_types, entry):
+    for var, tipe in all_vars_with_types:
+        ut.prepend_to_block({"op": "undef", "type": tipe, "dest": var}, entry)
 
 
 def phiify(labels_to_blocks, succs, all_vars, frontiers):
@@ -54,14 +52,16 @@ def phiify(labels_to_blocks, succs, all_vars, frontiers):
         while i < len(definitions):
             label, block = definitions[i]
             tipe = grab_type(var, block)
-            if len(succs[label]) != 0:
-                append_upsilon(block, var, tipe)
             for l in frontiers[label]:
                 dominated = labels_to_blocks[l]
                 if not already_phied(var, dominated):
                     dominated.insert(1, {"op": "get", "type": tipe, "dest": var})
-                if (l, dominated) not in definitions:
-                    definitions.append((l, dominated))
+                    for pred in preds[l]:
+                        ut.append_to_block(
+                            {"op": "set", "args": [var, var]}, labels_to_blocks[pred]
+                        )
+                    if (l, dominated) not in definitions:
+                        definitions.append((l, dominated))
             i += 1
 
 

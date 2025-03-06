@@ -316,3 +316,39 @@ def all_vars_in_prog(prog):
     for block in labels_to_blocks.values():
         all_vars |= all_vars_in_block(block)
     return all_vars
+
+
+def all_vars_in_prog_with_types(prog):
+    all_dests = {}
+    function_args = {
+        arg["name"]: arg["type"]
+        for function in prog["functions"]
+        for arg in function.get("args", [])
+    }
+    _, _, _, labels_to_blocks, _ = the_stuff(prog)
+    for block in labels_to_blocks.values():
+        old_dests = copy.deepcopy(all_dests)
+        all_dests |= all_dests_in_block_with_types(block)
+        assert all(
+            d in all_dests for d in old_dests
+        ), "Don't use this in a context where you might have conflicting variable names!"
+
+    for name, tipe in function_args.items():
+        if name in all_dests:
+            assert all_dests[name] == function_args[name]
+            all_dests.pop(name)
+    return function_args, all_dests
+
+
+def append_to_block(instr, block):
+    index = len(block)
+    if block and block[-1].get("op", "") in ["jmp", "br"]:
+        index -= 1
+    block.insert(index, instr)
+
+
+def prepend_to_block(instr, block):
+    index = 0
+    if block and "label" in block[0]:
+        index += 1
+    block.insert(index, instr)
