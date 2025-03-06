@@ -110,34 +110,40 @@ def iterate_to_convergence(optimization_pass):
     return outer
 
 
-# did I get post-order backwards?
-# yes, this function is not post-order traversal
-def post_order(succs):
-    # because this is a generator, we don't want to be sensitive to
-    #   changes to the input during our runtime
-    s = copy.deepcopy(succs)
-    frontier = [
-        block for block in s.keys() if all(block not in succs for succs in s.values())
-    ]
-    unvisited = [block for block in s.keys()]
-    while len(frontier):
-        block = frontier.pop(0)
-        unvisited.remove(block) if block in unvisited else None
-        frontier += [
-            succ for succ in succs[block] if succ not in frontier and succ in unvisited
-        ]
-        if all(block not in s[f] for f in unvisited):
-            yield block
-        else:
-            frontier.append(block)
+def do_post_order(label, succs, visited):
+    visited.add(label)
+    children = []
+    for succ in succs[label]:
+        if succ not in visited:
+            children += do_post_order(succ, succs, visited)
+    return children + [label]
+
+
+def non_entry_roots(succs):
+    for label in succs:
+        if all(label not in succs[l] for l in succs):
+            yield label
+
+
+def post_order(succs, entry_blocks):
+    ret = []
+    for label in entry_blocks:
+        ret += do_post_order(label, succs, set())
+    # these nodes are unreachable -- it might be better to prune them from the
+    #   CFG before doing anything else, but let's tolerate them for now
+    # note that this is not exactly post order if any of these non-entry roots
+    #   exist
+    for label in non_entry_roots(succs):
+        ret += do_post_order(label, succs, set())
+    return ret
 
 
 # this is not really worth putting in a function, but one could hypothetically
 #   calculate this more efficiently by doing it directly via the preds
 #   graph and putting this in its own function is my nod to that fact -- maybe
 #   one day I will do it that way
-def reverse_post_order(succs):
-    return reversed(list(post_order(succs)))
+def reverse_post_order(succs, entry_blocks):
+    return reversed(list(post_order(succs, entry_blocks)))
 
 
 def data_flow_analysis(
@@ -200,16 +206,16 @@ def data_flow_prerequisites(prog, entry_init, general_init):
     for entry_label in entry_blocks:
         ret[entry_label]["in"] = entry_init()
 
-    return blocks, succs, preds, labels_to_blocks, ret
+    return blocks, succs, preds, labels_to_blocks, entry_blocks, ret
 
 
 def forward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
-    blocks, succs, preds, labels_to_blocks, ret = data_flow_prerequisites(
+    blocks, succs, preds, labels_to_blocks, entry_blocks, ret = data_flow_prerequisites(
         prog, entry_init, general_init
     )
 
     worklist = collections.deque(
-        (l, labels_to_blocks[l]) for l in reverse_post_order(succs)
+        (l, labels_to_blocks[l]) for l in reverse_post_order(succs, entry_blocks)
     )
 
     return data_flow_analysis(
@@ -226,10 +232,12 @@ def forward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
 
 
 def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
-    blocks, succs, preds, labels_to_blocks, ret = data_flow_prerequisites(
+    blocks, succs, preds, labels_to_blocks, entry_blocks, ret = data_flow_prerequisites(
         prog, entry_init, general_init
     )
-    worklist = collections.deque((l, labels_to_blocks[l]) for l in post_order(succs))
+    worklist = collections.deque(
+        (l, labels_to_blocks[l]) for l in post_order(succs, entry_blocks)
+    )
 
     return data_flow_analysis(
         ret,
@@ -256,8 +264,8 @@ def dominators(prog):
     while doms != doms_after:
         doms = doms_after
         doms_after = copy.deepcopy(doms)
-        for label in reverse_post_order(succs):
-            if label in entry_blocks:
+        for label in reverse_post_order(succs, entry_blocks):
+            if label in entry_blocks or label in ners:
                 doms_after[label] = set([label])
             else:
                 pred_doms = set(l for l in labels_to_blocks.keys())
