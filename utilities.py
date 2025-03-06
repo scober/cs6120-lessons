@@ -138,10 +138,6 @@ def post_order(succs, entry_blocks):
     return ret
 
 
-# this is not really worth putting in a function, but one could hypothetically
-#   calculate this more efficiently by doing it directly via the preds
-#   graph and putting this in its own function is my nod to that fact -- maybe
-#   one day I will do it that way
 def reverse_post_order(succs, entry_blocks):
     return reversed(list(post_order(succs, entry_blocks)))
 
@@ -152,6 +148,8 @@ def data_flow_analysis(
     succs,
     preds,
     labels_to_blocks,
+    entry_blocks,
+    entry_init,
     i,
     o,
     merge,
@@ -163,6 +161,8 @@ def data_flow_analysis(
         label, block = worklist.popleft()
 
         ins = tuple(ret[inpt][i] for inpt in succs[label])
+        if label in entry_blocks:
+            ins += (entry_init(),)
         ret[label][o] = merge(ins)
 
         in_before = ret[label][i]
@@ -224,6 +224,8 @@ def forward_data_flow_analysis(prog, entry_init, general_init, merge, transfer):
         preds,
         succs,
         labels_to_blocks,
+        entry_blocks,
+        entry_init,
         "out",
         "in",
         merge,
@@ -245,6 +247,8 @@ def backward_data_flow_analysis(prog, entry_init, general_init, merge, transfer)
         succs,
         preds,
         labels_to_blocks,
+        entry_blocks,
+        entry_init,
         "in",
         "out",
         merge,
