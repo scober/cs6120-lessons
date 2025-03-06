@@ -1,6 +1,6 @@
 [X] into SSA
 [X] is_ssa.py test
 [X] same behavior after ssa test
-[ ] out of SSA
-[ ] same behavior after round-trip test
+[X] out of SSA
+[X] same behavior after round-trip test
 [ ] overhead

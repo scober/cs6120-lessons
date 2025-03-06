@@ -7,3 +7,6 @@ command = "bril2json < {filename} | brili {args}"
 
 [envs.post_ssa]
 command = "bril2json < {filename} | python ssa.py in | brili {args}"
+
+[envs.roundtrip]
+command = "bril2json < {filename} | python ssa.py in | python ssa.py out | brili {args}"

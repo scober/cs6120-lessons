@@ -168,9 +168,125 @@ def to_ssa_form(instrs, function_args):
     return functools.reduce(lambda acc, tup: acc + tup[1], blocks["dummy"], [])
 
 
+def reaching_definitions(prog):
+    def transfer(reaching_in, block):
+        reaching_out = copy.deepcopy(reaching_in)
+        for instr in block:
+            reaching_out.add(instr.get("dest", ""))
+        reaching_out.discard("")
+        return reaching_out
+
+    # this is only correct for a single function, I really should have designed
+    #   this framework to work on single functions, not whole programs
+    return ut.forward_data_flow_analysis(
+        prog,
+        lambda: set(arg["name"] for arg in prog["functions"][0]["args"]),
+        set,
+        lambda sets: set().union(*sets),
+        transfer,
+    )
+
+
 @ut.global_optimization
-def phi_to_id(instrs, function_args):
-    return instrs
+def drop_undefs(instrs, function_args):
+    undefed_vars = set()
+
+    def instr_is_not_undefed(instr):
+        if instr.get("op", "") == "undef":
+            undefed_vars.add(instr["dest"])
+            return False
+        return all(arg not in undefed_vars for arg in instr.get("args", []))
+
+    return list(filter(instr_is_not_undefed, instrs))
+    # out = copy.deepcopy(instrs)
+    # to_drop = []
+
+    # for index, instr in enumerate(instrs):
+    #    if instr.get("op", "") == "undef":
+    #        to_drop.append(index)
+    #        var = instr["dest"]
+    #        for other_index, other_instr in enumerate(instrs[index + 1 :], index + 1):
+    #            if other_instr.get("dest", "") == var:
+    #                break
+    #            if other_instr.get("op", "") == "set" and other_instr["args"][1] == var:
+    #                to_drop.append(other_index)
+
+    # for i in reversed(sorted(to_drop)):
+    #    out.pop(i)
+    # return out
+
+
+@ut.global_optimization
+def drop_phis(instrs, function_args):
+    return list(filter(lambda instr: instr.get("op", "") != "get", instrs))
+
+
+@ut.global_optimization
+def upsilon_to_id(instrs, function_args):
+    prog = {"functions": [{"instrs": instrs, "name": "dummy"}]}
+    if function_args:
+        prog["functions"][0]["args"] = function_args
+    _, all_vars = ut.all_vars_in_prog_with_types(prog)
+
+    return list(
+        map(
+            lambda instr: (
+                {
+                    "op": "id",
+                    "type": all_vars[instr["args"][0]],
+                    "dest": instr["args"][0],
+                    "args": [instr["args"][1]],
+                }
+                if instr.get("op", "") == "set"
+                else instr
+            ),
+            instrs,
+        )
+    )
+
+
+@ut.global_optimization
+def drop_invalid_args(instrs, function_args):
+    prog = {"functions": [{"instrs": instrs, "name": "dummy"}]}
+    if function_args:
+        prog["functions"][0]["args"] = function_args
+
+    defs = reaching_definitions(prog)
+    blocks, succs, preds, labels_to_blocks, entry_blocks = ut.the_stuff(prog)
+
+    out = []
+    for l, b in blocks["dummy"]:
+        out.extend(
+            filter(
+                lambda instr: all(
+                    arg in defs[l]["out"] for arg in instr.get("args", [])
+                ),
+                b,
+            )
+        )
+
+    return out
+
+
+@ut.global_optimization
+def drop_phi_loops(instrs, function_args):
+    appears_outside_of_phis = set(arg["name"] for arg in function_args)
+    for instr in instrs:
+        if instr.get("op", "") not in ["get", "set"]:
+            appears_outside_of_phis.add(instr.get("dest", ""))
+            appears_outside_of_phis.update(set(instr.get("args", [])))
+    appears_outside_of_phis.discard("")
+
+    return list(
+        filter(
+            lambda instr: instr.get("op", "") not in ["get", "set"]
+            or (
+                instr.get("dest", "") in appears_outside_of_phis
+                and all(arg in appears_outside_of_phis for arg in instr.get("args", []))
+            ),
+            instrs,
+        )
+    )
 
 
 @click.group
@@ -191,7 +307,7 @@ def out_of_ssa_command():
     """
     Convert input program out of SSA form (input is assumed to be in SSA form)
     """
-    print(json.dumps(phi_to_id(json.load(sys.stdin))))
+    print(json.dumps(drop_phis(upsilon_to_id(json.load(sys.stdin)))))
 
 
 if __name__ == "__main__":
