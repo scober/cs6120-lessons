@@ -1,0 +1,400 @@
+# This patch is largely replicating the steps laid out in
+#   http://sauparna.sdf.org/Doom/Compile_Doom
+#   (and the two PRs that post links to)
+# It additionally builds with clang instead of gcc and passes my nonsense LLVM
+#   pass to clang (and passes (to ld) the object file with the C functions that
+#   the LLVM pass inserts)
+# The last big change is to reformat the list of object files -- no substantive
+#   changes were made to that list (except for adding my own external object
+#   file at the end)
+
+diff --git a/linuxdoom-1.10/Makefile b/linuxdoom-1.10/Makefile
+index 8c69794..07b263a 100644
+--- a/linuxdoom-1.10/Makefile
++++ b/linuxdoom-1.10/Makefile
+@@ -4,78 +4,79 @@
+ #
+ # $Log:$
+ #
+-CC=  gcc  # gcc or g++
++CC=  clang  # gcc or g++
+ 
+-CFLAGS=-g -Wall -DNORMALUNIX -DLINUX # -DUSEASM 
++CFLAGS=-g -Wall -DNORMALUNIX -DLINUX -DSNDSERV -DSNDSRV -fpass-plugin=../../cs6120-lessons/l7/llvm-pass-skeleton/build/skeleton/SkeletonPass.so # -DUSEASM 
+ LDFLAGS=-L/usr/X11R6/lib
+-LIBS=-lXext -lX11 -lnsl -lm
++LIBS=-lXext -lX11 -l:libnsl.so.1 -lm
+ 
+ # subdirectory for objects
+ O=linux
+ 
+ # not too sophisticated dependency
+ OBJS=				\
+-		$(O)/doomdef.o		\
+-		$(O)/doomstat.o		\
+-		$(O)/dstrings.o		\
+-		$(O)/i_system.o		\
+-		$(O)/i_sound.o		\
+-		$(O)/i_video.o		\
+-		$(O)/i_net.o			\
+-		$(O)/tables.o			\
+-		$(O)/f_finale.o		\
+-		$(O)/f_wipe.o 		\
+-		$(O)/d_main.o			\
+-		$(O)/d_net.o			\
+-		$(O)/d_items.o		\
+-		$(O)/g_game.o			\
+-		$(O)/m_menu.o			\
+-		$(O)/m_misc.o			\
+-		$(O)/m_argv.o  		\
+-		$(O)/m_bbox.o			\
+-		$(O)/m_fixed.o		\
+-		$(O)/m_swap.o			\
+-		$(O)/m_cheat.o		\
+-		$(O)/m_random.o		\
+-		$(O)/am_map.o			\
+-		$(O)/p_ceilng.o		\
+-		$(O)/p_doors.o		\
+-		$(O)/p_enemy.o		\
+-		$(O)/p_floor.o		\
+-		$(O)/p_inter.o		\
+-		$(O)/p_lights.o		\
+-		$(O)/p_map.o			\
+-		$(O)/p_maputl.o		\
+-		$(O)/p_plats.o		\
+-		$(O)/p_pspr.o			\
+-		$(O)/p_setup.o		\
+-		$(O)/p_sight.o		\
+-		$(O)/p_spec.o			\
+-		$(O)/p_switch.o		\
+-		$(O)/p_mobj.o			\
+-		$(O)/p_telept.o		\
+-		$(O)/p_tick.o			\
+-		$(O)/p_saveg.o		\
+-		$(O)/p_user.o			\
+-		$(O)/r_bsp.o			\
+-		$(O)/r_data.o			\
+-		$(O)/r_draw.o			\
+-		$(O)/r_main.o			\
+-		$(O)/r_plane.o		\
+-		$(O)/r_segs.o			\
+-		$(O)/r_sky.o			\
+-		$(O)/r_things.o		\
+-		$(O)/w_wad.o			\
+-		$(O)/wi_stuff.o		\
+-		$(O)/v_video.o		\
+-		$(O)/st_lib.o			\
+-		$(O)/st_stuff.o		\
+-		$(O)/hu_stuff.o		\
+-		$(O)/hu_lib.o			\
+-		$(O)/s_sound.o		\
+-		$(O)/z_zone.o			\
+-		$(O)/info.o				\
+-		$(O)/sounds.o
++		$(O)/doomdef.o \
++		$(O)/doomstat.o \
++		$(O)/dstrings.o \
++		$(O)/i_system.o \
++		$(O)/i_sound.o \
++		$(O)/i_video.o \
++		$(O)/i_net.o \
++		$(O)/tables.o \
++		$(O)/f_finale.o \
++		$(O)/f_wipe.o \
++		$(O)/d_main.o \
++		$(O)/d_net.o \
++		$(O)/d_items.o \
++		$(O)/g_game.o \
++		$(O)/m_menu.o \
++		$(O)/m_misc.o \
++		$(O)/m_argv.o \
++		$(O)/m_bbox.o \
++		$(O)/m_fixed.o \
++		$(O)/m_swap.o \
++		$(O)/m_cheat.o \
++		$(O)/m_random.o \
++		$(O)/am_map.o \
++		$(O)/p_ceilng.o \
++		$(O)/p_doors.o \
++		$(O)/p_enemy.o \
++		$(O)/p_floor.o \
++		$(O)/p_inter.o \
++		$(O)/p_lights.o \
++		$(O)/p_map.o \
++		$(O)/p_maputl.o \
++		$(O)/p_plats.o \
++		$(O)/p_pspr.o \
++		$(O)/p_setup.o \
++		$(O)/p_sight.o \
++		$(O)/p_spec.o \
++		$(O)/p_switch.o \
++		$(O)/p_mobj.o \
++		$(O)/p_telept.o \
++		$(O)/p_tick.o \
++		$(O)/p_saveg.o \
++		$(O)/p_user.o \
++		$(O)/r_bsp.o \
++		$(O)/r_data.o \
++		$(O)/r_draw.o \
++		$(O)/r_main.o \
++		$(O)/r_plane.o \
++		$(O)/r_segs.o \
++		$(O)/r_sky.o \
++		$(O)/r_things.o \
++		$(O)/w_wad.o \
++		$(O)/wi_stuff.o \
++		$(O)/v_video.o \
++		$(O)/st_lib.o \
++		$(O)/st_stuff.o \
++		$(O)/hu_stuff.o \
++		$(O)/hu_lib.o \
++		$(O)/s_sound.o \
++		$(O)/z_zone.o \
++		$(O)/info.o \
++		$(O)/sounds.o \
++		../../cs6120-lessons/l7/extras.o
+ 
+ all:	 $(O)/linuxxdoom
+ 
+@@ -92,4 +93,4 @@ $(O)/%.o:	%.c
+ 
+ #############################################################
+ #
+-#############################################################
+\ No newline at end of file
++#############################################################
+diff --git a/linuxdoom-1.10/am_map.c b/linuxdoom-1.10/am_map.c
+index 999e455..4be1e68 100644
+--- a/linuxdoom-1.10/am_map.c
++++ b/linuxdoom-1.10/am_map.c
+@@ -783,7 +783,7 @@ void AM_doFollowPlayer(void)
+ //
+ void AM_updateLightLev(void)
+ {
+-    static nexttic = 0;
++    static int nexttic = 0;
+     //static int litelevels[] = { 0, 3, 5, 6, 6, 7, 7, 7 };
+     static int litelevels[] = { 0, 4, 7, 10, 12, 14, 15, 15 };
+     static int litelevelscnt = 0;
+@@ -856,9 +856,9 @@ AM_clipMline
+ 	TOP	=8
+     };
+     
+-    register	outcode1 = 0;
+-    register	outcode2 = 0;
+-    register	outside;
++    register	int outcode1 = 0;
++    register	int outcode2 = 0;
++    register	int outside;
+     
+     fpoint_t	tmp;
+     int		dx;
+@@ -989,7 +989,7 @@ AM_drawFline
+     register int ay;
+     register int d;
+     
+-    static fuck = 0;
++    static int fuck = 0;
+ 
+     // For debugging only
+     if (      fl->a.x < 0 || fl->a.x >= f_w
+diff --git a/linuxdoom-1.10/i_sound.c b/linuxdoom-1.10/i_sound.c
+index a327bfa..e390046 100644
+--- a/linuxdoom-1.10/i_sound.c
++++ b/linuxdoom-1.10/i_sound.c
+@@ -27,6 +27,7 @@ rcsid[] = "$Id: i_unix.c,v 1.5 1997/02/03 22:45:10 b1 Exp $";
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <stdarg.h>
++#include <errno.h>
+ 
+ #include <math.h>
+ 
+@@ -163,7 +164,6 @@ myioctl
+   int*	arg )
+ {   
+     int		rc;
+-    extern int	errno;
+     
+     rc = ioctl(fd, command, arg);  
+     if (rc < 0)
+diff --git a/linuxdoom-1.10/i_video.c b/linuxdoom-1.10/i_video.c
+index 9b311b3..57af11b 100644
+--- a/linuxdoom-1.10/i_video.c
++++ b/linuxdoom-1.10/i_video.c
+@@ -46,7 +46,7 @@ int XShmGetEventBase( Display* dpy ); // problems with g++?
+ #include <sys/socket.h>
+ 
+ #include <netinet/in.h>
+-#include <errnos.h>
++#include <errno.h>
+ #include <signal.h>
+ 
+ #include "doomstat.h"
+@@ -817,6 +817,7 @@ void I_InitGraphics(void)
+ 					attribmask,
+ 					&attribs );
+ 
++    XInstallColormap(X_display, X_cmap);
+     XDefineCursor(X_display, X_mainWindow,
+ 		  createnullcursor( X_display, X_mainWindow ) );
+ 
+diff --git a/linuxdoom-1.10/m_misc.c b/linuxdoom-1.10/m_misc.c
+index 0df4fe5..a5434db 100644
+--- a/linuxdoom-1.10/m_misc.c
++++ b/linuxdoom-1.10/m_misc.c
+@@ -226,7 +226,7 @@ typedef struct
+ {
+     char*	name;
+     int*	location;
+-    int		defaultvalue;
++    long long		defaultvalue;
+     int		scantranslate;		// PC scan code hack
+     int		untranslated;		// lousy hack
+ } default_t;
+@@ -254,15 +254,15 @@ default_t	defaults[] =
+ 
+ // UNIX hack, to be removed. 
+ #ifdef SNDSERV
+-    {"sndserver", (int *) &sndserver_filename, (int) "sndserver"},
++    {"sndserver", (int *) &sndserver_filename, (long long int) "sndserver"},
+     {"mb_used", &mb_used, 2},
+ #endif
+     
+ #endif
+ 
+ #ifdef LINUX
+-    {"mousedev", (int*)&mousedev, (int)"/dev/ttyS0"},
+-    {"mousetype", (int*)&mousetype, (int)"microsoft"},
++    {"mousedev", (int*)&mousedev, (long long int)"/dev/ttyS0"},
++    {"mousetype", (int*)&mousetype, (long long int)"microsoft"},
+ #endif
+ 
+     {"use_mouse",&usemouse, 1},
+@@ -285,16 +285,16 @@ default_t	defaults[] =
+ 
+     {"usegamma",&usegamma, 0},
+ 
+-    {"chatmacro0", (int *) &chat_macros[0], (int) HUSTR_CHATMACRO0 },
+-    {"chatmacro1", (int *) &chat_macros[1], (int) HUSTR_CHATMACRO1 },
+-    {"chatmacro2", (int *) &chat_macros[2], (int) HUSTR_CHATMACRO2 },
+-    {"chatmacro3", (int *) &chat_macros[3], (int) HUSTR_CHATMACRO3 },
+-    {"chatmacro4", (int *) &chat_macros[4], (int) HUSTR_CHATMACRO4 },
+-    {"chatmacro5", (int *) &chat_macros[5], (int) HUSTR_CHATMACRO5 },
+-    {"chatmacro6", (int *) &chat_macros[6], (int) HUSTR_CHATMACRO6 },
+-    {"chatmacro7", (int *) &chat_macros[7], (int) HUSTR_CHATMACRO7 },
+-    {"chatmacro8", (int *) &chat_macros[8], (int) HUSTR_CHATMACRO8 },
+-    {"chatmacro9", (int *) &chat_macros[9], (int) HUSTR_CHATMACRO9 }
++    {"chatmacro0", (int *) &chat_macros[0], (long long int) HUSTR_CHATMACRO0 },
++    {"chatmacro1", (int *) &chat_macros[1], (long long int) HUSTR_CHATMACRO1 },
++    {"chatmacro2", (int *) &chat_macros[2], (long long int) HUSTR_CHATMACRO2 },
++    {"chatmacro3", (int *) &chat_macros[3], (long long int) HUSTR_CHATMACRO3 },
++    {"chatmacro4", (int *) &chat_macros[4], (long long int) HUSTR_CHATMACRO4 },
++    {"chatmacro5", (int *) &chat_macros[5], (long long int) HUSTR_CHATMACRO5 },
++    {"chatmacro6", (int *) &chat_macros[6], (long long int) HUSTR_CHATMACRO6 },
++    {"chatmacro7", (int *) &chat_macros[7], (long long int) HUSTR_CHATMACRO7 },
++    {"chatmacro8", (int *) &chat_macros[8], (long long int) HUSTR_CHATMACRO8 },
++    {"chatmacro9", (int *) &chat_macros[9], (long long int) HUSTR_CHATMACRO9 }
+ 
+ };
+ 
+diff --git a/linuxdoom-1.10/p_setup.c b/linuxdoom-1.10/p_setup.c
+index e5d3667..f27b4ff 100644
+--- a/linuxdoom-1.10/p_setup.c
++++ b/linuxdoom-1.10/p_setup.c
+@@ -533,7 +533,7 @@ void P_GroupLines (void)
+     }
+ 	
+     // build line tables for each sector	
+-    linebuffer = Z_Malloc (total*4, PU_LEVEL, 0);
++    linebuffer = Z_Malloc (total*sizeof(*linebuffer), PU_LEVEL, 0);
+     sector = sectors;
+     for (i=0 ; i<numsectors ; i++, sector++)
+     {
+diff --git a/linuxdoom-1.10/r_data.c b/linuxdoom-1.10/r_data.c
+index acabd53..2d27c65 100644
+--- a/linuxdoom-1.10/r_data.c
++++ b/linuxdoom-1.10/r_data.c
+@@ -27,6 +27,8 @@
+ static const char
+ rcsid[] = "$Id: r_data.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
+ 
++#include <stdint.h>
++
+ #include "i_system.h"
+ #include "z_zone.h"
+ 
+@@ -87,7 +89,7 @@ typedef struct
+     boolean		masked;	
+     short		width;
+     short		height;
+-    void		**columndirectory;	// OBSOLETE
++    int     columndirectory;	// OBSOLETE
+     short		patchcount;
+     mappatch_t	patches[1];
+ } maptexture_t;
+@@ -479,10 +481,10 @@ void R_InitTextures (void)
+     }
+     numtextures = numtextures1 + numtextures2;
+ 	
+-    textures = Z_Malloc (numtextures*4, PU_STATIC, 0);
+-    texturecolumnlump = Z_Malloc (numtextures*4, PU_STATIC, 0);
+-    texturecolumnofs = Z_Malloc (numtextures*4, PU_STATIC, 0);
+-    texturecomposite = Z_Malloc (numtextures*4, PU_STATIC, 0);
++    textures = Z_Malloc (numtextures*sizeof(*textures), PU_STATIC, 0);
++    texturecolumnlump = Z_Malloc (numtextures*sizeof(texturecolumnlump), PU_STATIC, 0);
++    texturecolumnofs = Z_Malloc (numtextures*sizeof(texturecolumnofs), PU_STATIC, 0);
++    texturecomposite = Z_Malloc (numtextures*sizeof(texturecomposite), PU_STATIC, 0);
+     texturecompositesize = Z_Malloc (numtextures*4, PU_STATIC, 0);
+     texturewidthmask = Z_Malloc (numtextures*4, PU_STATIC, 0);
+     textureheight = Z_Malloc (numtextures*4, PU_STATIC, 0);
+@@ -639,7 +641,7 @@ void R_InitColormaps (void)
+     lump = W_GetNumForName("COLORMAP"); 
+     length = W_LumpLength (lump) + 255; 
+     colormaps = Z_Malloc (length, PU_STATIC, 0); 
+-    colormaps = (byte *)( ((int)colormaps + 255)&~0xff); 
++    colormaps = (byte *)( ((intptr_t)colormaps + 255)&~0xff); 
+     W_ReadLump (lump,colormaps); 
+ }
+ 
+diff --git a/linuxdoom-1.10/r_draw.c b/linuxdoom-1.10/r_draw.c
+index 0145044..f6b9ebe 100644
+--- a/linuxdoom-1.10/r_draw.c
++++ b/linuxdoom-1.10/r_draw.c
+@@ -27,6 +27,7 @@
+ static const char
+ rcsid[] = "$Id: r_draw.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
+ 
++#include <stdint.h>
+ 
+ #include "doomdef.h"
+ 
+@@ -461,7 +462,7 @@ void R_InitTranslationTables (void)
+     int		i;
+ 	
+     translationtables = Z_Malloc (256*3+255, PU_STATIC, 0);
+-    translationtables = (byte *)(( (int)translationtables + 255 )& ~255);
++    translationtables = (byte *)(( (intptr_t)translationtables + 255 )& ~255);
+     
+     // translate just the 16 green colors
+     for (i=0 ; i<256 ; i++)
+diff --git a/sndserv/linux.c b/sndserv/linux.c
+index 93b067d..3c0cf42 100644
+--- a/sndserv/linux.c
++++ b/sndserv/linux.c
+@@ -39,6 +39,7 @@ static const char rcsid[] = "$Id: linux.c,v 1.3 1997/01/26 07:45:01 b1 Exp $";
+ #include <stdio.h>
+ #include <fcntl.h>
+ #include <unistd.h>
++#include <errno.h>
+ 
+ #include <linux/soundcard.h>
+ 
+@@ -53,7 +54,6 @@ myioctl
+   int*	arg )
+ {   
+     int		rc;
+-    extern int	errno;
+     
+     rc = ioctl(fd, command, arg);  
+     if (rc < 0)
