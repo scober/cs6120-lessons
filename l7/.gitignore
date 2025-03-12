@@ -1,1 +1,5 @@
+# executable
 test
+
+# build intermediates
+*.o
