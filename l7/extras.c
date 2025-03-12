@@ -8,3 +8,7 @@ void logint(int i) {
 void alloc_one() {
   malloc(1);
 }
+
+void alloc_some(int i) {
+  malloc(i);
+}
