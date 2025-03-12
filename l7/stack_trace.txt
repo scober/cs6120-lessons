@@ -1,0 +1,72 @@
+Stack dump:
+0.	Program arguments: clang -fpass-plugin=llvm-pass-skeleton/build/skeleton/SkeletonPass.so -c test.c
+1.	<eof> parser at end of file
+2.	Optimizer
+ #0 0x000079cd495a63bf llvm::sys::PrintStackTrace(llvm::raw_ostream&, int) build-llvm/tools/clang/stage2-bins/llvm/lib/Support/Unix/Signals.inc:723:13
+ #1 0x000079cd495a44f9 llvm::sys::RunSignalHandlers() build-llvm/tools/clang/stage2-bins/llvm/lib/Support/Signals.cpp:106:18
+ #2 0x000079cd494f0227 HandleCrash build-llvm/tools/clang/stage2-bins/llvm/lib/Support/CrashRecoveryContext.cpp:73:5
+ #3 0x000079cd494f0227 CrashRecoverySignalHandler build-llvm/tools/clang/stage2-bins/llvm/lib/Support/CrashRecoveryContext.cpp:390:51
+ #4 0x000079cd48045330 (/lib/x86_64-linux-gnu/libc.so.6+0x45330)
+ #5 0x000079cd495faea0 getValueID build-llvm/tools/clang/stage2-bins/llvm/include/llvm/IR/Value.h:533:12
+ #6 0x000079cd495faea0 getOpcode build-llvm/tools/clang/stage2-bins/llvm/include/llvm/IR/Instruction.h:239:39
+ #7 0x000079cd495faea0 classof build-llvm/tools/clang/stage2-bins/llvm/include/llvm/IR/Instructions.h:2942:15
+ #8 0x000079cd495faea0 doit build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Casting.h:64:53
+ #9 0x000079cd495faea0 doit build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Casting.h:81:12
+#10 0x000079cd495faea0 doit build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Casting.h:137:12
+#11 0x000079cd495faea0 isPossible build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Casting.h:255:12
+#12 0x000079cd495faea0 isa<llvm::PHINode, llvm::Instruction> build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Casting.h:549:10
+#13 0x000079cd495faea0 getFirstNonPHI build-llvm/tools/clang/stage2-bins/llvm/lib/IR/BasicBlock.cpp:401:10
+#14 0x000079cd495faea0 llvm::BasicBlock::getFirstInsertionPt() const build-llvm/tools/clang/stage2-bins/llvm/lib/IR/BasicBlock.cpp:447:36
+#15 0x000079cd487b31b5 llvm::BasicBlock::getFirstInsertionPt() (llvm-pass-skeleton/build/skeleton/SkeletonPass.so+0x171b5)
+#16 0x000079cd487b1834 (anonymous namespace)::SkeletonPass::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) Skeleton.cpp:0:0
+#17 0x000079cd487b2075 llvm::detail::PassModel<llvm::Module, (anonymous namespace)::SkeletonPass, llvm::PreservedAnalyses, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) Skeleton.cpp:0:0
+#18 0x000079cd4972e261 llvm::PassManager<llvm::Module, llvm::AnalysisManager<llvm::Module>>::run(llvm::Module&, llvm::AnalysisManager<llvm::Module>&) build-llvm/tools/clang/stage2-bins/llvm/include/llvm/IR/PassManager.h:547:10
+#19 0x000079cd51c1f590 isSmall build-llvm/tools/clang/stage2-bins/llvm/include/llvm/ADT/SmallPtrSet.h:195:33
+#20 0x000079cd51c1f590 ~SmallPtrSetImplBase build-llvm/tools/clang/stage2-bins/llvm/include/llvm/ADT/SmallPtrSet.h:83:10
+#21 0x000079cd51c1f590 ~PreservedAnalyses build-llvm/tools/clang/stage2-bins/llvm/include/llvm/IR/PassManager.h:172:7
+#22 0x000079cd51c1f590 RunOptimizationPipeline build-llvm/tools/clang/stage2-bins/clang/lib/CodeGen/BackendUtil.cpp:1101:5
+#23 0x000079cd51c16ef3 EmitAssembly build-llvm/tools/clang/stage2-bins/clang/lib/CodeGen/BackendUtil.cpp:0:3
+#24 0x000079cd51c16ef3 clang::EmitBackendOutput(clang::DiagnosticsEngine&, clang::HeaderSearchOptions const&, clang::CodeGenOptions const&, clang::TargetOptions const&, clang::LangOptions const&, llvm::StringRef, llvm::Module*, clang::BackendAction, llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem>, std::unique_ptr<llvm::raw_pwrite_stream, std::default_delete<llvm::raw_pwrite_stream>>, clang::BackendConsumer*) build-llvm/tools/clang/stage2-bins/clang/lib/CodeGen/BackendUtil.cpp:1328:13
+#25 0x000079cd51f9fa07 ~unique_ptr /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits/unique_ptr.h:403:6
+#26 0x000079cd51f9fa07 clang::BackendConsumer::HandleTranslationUnit(clang::ASTContext&) build-llvm/tools/clang/stage2-bins/clang/lib/CodeGen/CodeGenAction.cpp:379:3
+#27 0x000079cd50b973d6 __normal_iterator /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits/stl_iterator.h:1077:20
+#28 0x000079cd50b973d6 begin /usr/lib/gcc/x86_64-linux-gnu/13/../../../../include/c++/13/bits/stl_vector.h:874:16
+#29 0x000079cd50b973d6 finalize<std::vector<std::unique_ptr<clang::TemplateInstantiationCallback, std::default_delete<clang::TemplateInstantiationCallback> >, std::allocator<std::unique_ptr<clang::TemplateInstantiationCallback, std::default_delete<clang::TemplateInstantiationCallback> > > > > build-llvm/tools/clang/stage2-bins/clang/include/clang/Sema/TemplateInstCallback.h:54:16
+#30 0x000079cd50b973d6 clang::ParseAST(clang::Sema&, bool, bool) build-llvm/tools/clang/stage2-bins/clang/lib/Parse/ParseAST.cpp:183:3
+#31 0x000079cd52a0662c clang::FrontendAction::Execute() build-llvm/tools/clang/stage2-bins/clang/lib/Frontend/FrontendAction.cpp:1073:10
+#32 0x000079cd529830b4 getPtr build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Error.h:279:12
+#33 0x000079cd529830b4 operator bool build-llvm/tools/clang/stage2-bins/llvm/include/llvm/Support/Error.h:239:16
+#34 0x000079cd529830b4 clang::CompilerInstance::ExecuteAction(clang::FrontendAction&) build-llvm/tools/clang/stage2-bins/clang/lib/Frontend/CompilerInstance.cpp:1057:23
+#35 0x000079cd52a8263d clang::ExecuteCompilerInvocation(clang::CompilerInstance*) build-llvm/tools/clang/stage2-bins/clang/lib/FrontendTool/ExecuteCompilerInvocation.cpp:272:25
+#36 0x000058caa5ade42e cc1_main(llvm::ArrayRef<char const*>, char const*, void*) build-llvm/tools/clang/stage2-bins/clang/tools/driver/cc1_main.cpp:294:15
+#37 0x000058caa5adb894 ExecuteCC1Tool build-llvm/tools/clang/stage2-bins/clang/tools/driver/driver.cpp:365:12
+#38 0x000079cd52633972 operator() build-llvm/tools/clang/stage2-bins/clang/lib/Driver/Job.cpp:440:30
+#39 0x000079cd52633972 callback_fn<(lambda at clang/lib/Driver/Job.cpp:440:22)> build-llvm/tools/clang/stage2-bins/llvm/include/llvm/ADT/STLFunctionalExtras.h:45:12
+#40 0x000079cd494eff77 operator() build-llvm/tools/clang/stage2-bins/llvm/include/llvm/ADT/STLFunctionalExtras.h:0:12
+#41 0x000079cd494eff77 llvm::CrashRecoveryContext::RunSafely(llvm::function_ref<void ()>) build-llvm/tools/clang/stage2-bins/llvm/lib/Support/CrashRecoveryContext.cpp:426:3
+#42 0x000079cd52633237 clang::driver::CC1Command::Execute(llvm::ArrayRef<std::optional<llvm::StringRef>>, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>*, bool*) const build-llvm/tools/clang/stage2-bins/clang/lib/Driver/Job.cpp:440:7
+#43 0x000079cd525fb518 clang::driver::Compilation::ExecuteCommand(clang::driver::Command const&, clang::driver::Command const*&, bool) const build-llvm/tools/clang/stage2-bins/clang/lib/Driver/Compilation.cpp:199:15
+#44 0x000079cd525fb77f clang::driver::Compilation::ExecuteJobs(clang::driver::JobList const&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&, bool) const build-llvm/tools/clang/stage2-bins/clang/lib/Driver/Compilation.cpp:253:13
+#45 0x000079cd52617c20 empty build-llvm/tools/clang/stage2-bins/llvm/include/llvm/ADT/SmallVector.h:94:46
+#46 0x000079cd52617c20 clang::driver::Driver::ExecuteCompilation(clang::driver::Compilation&, llvm::SmallVectorImpl<std::pair<int, clang::driver::Command const*>>&) build-llvm/tools/clang/stage2-bins/clang/lib/Driver/Driver.cpp:1921:23
+#47 0x000058caa5adb1ec clang_main(int, char**, llvm::ToolContext const&) build-llvm/tools/clang/stage2-bins/clang/tools/driver/driver.cpp:540:21
+#48 0x000058caa5ae8383 main build-llvm/tools/clang/stage2-bins/build-llvm/tools/clang/stage2-bins/tools/clang/tools/driver/clang-driver.cpp:17:10
+#49 0x000079cd4802a1ca __libc_start_call_main ./csu/../sysdeps/nptl/libc_start_call_main.h:74:3
+#50 0x000079cd4802a28b call_init ./csu/../csu/libc-start.c:128:20
+#51 0x000079cd4802a28b __libc_start_main ./csu/../csu/libc-start.c:347:5
+#52 0x000058caa5ad8255 _start (/usr/lib/llvm-18/bin/clang+0xe255)
+clang: error: clang frontend command failed with exit code 139 (use -v to see invocation)
+Ubuntu clang version 18.1.3 (1ubuntu1)
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+InstalledDir: /usr/bin
+clang: note: diagnostic msg: 
+********************
+
+PLEASE ATTACH THE FOLLOWING FILES TO THE BUG REPORT:
+Preprocessed source(s) and associated run script(s) are located at:
+clang: note: diagnostic msg: /tmp/simon/test-8278af.c
+clang: note: diagnostic msg: /tmp/simon/test-8278af.sh
+clang: note: diagnostic msg: 
+
+********************
