@@ -375,3 +375,33 @@ def prepend_to_block(instr, block):
     if block and "label" in block[0]:
         index += 1
     block.insert(index, instr)
+
+
+def natural_loops(prog):
+    analysis = set()
+    _, succs, preds, _, _ = the_stuff(prog)
+    doms = dominators(prog)
+
+    backedges = set(
+        (source, dest)
+        for source, dests in succs.items()
+        for dest in dests
+        if dest in doms[source]
+    )
+
+    # expand backedges
+    for backedge in backedges:
+        loop = {backedge[0], backedge[1]}
+        entry = backedge[1]
+        old_loop = set()
+        while old_loop != loop:
+            old_loop = loop
+            for member in loop:
+                if member == entry:
+                    continue
+                loop = loop.union(preds[member])
+
+        # putting the entry block first is a nice invariant
+        analysis.add(tuple(sorted(loop, key=lambda x: 0 if x == entry else 1)))
+
+    return analysis
