@@ -16,39 +16,23 @@ struct SkeletonPass : public PassInfoMixin<SkeletonPass> {
     for (auto &F : M) {
       LLVMContext& Ctx = F.getContext();
 
-      //std::vector<Type*> paramTypes = {Type::getInt32Ty(Ctx)};
-      //Type *retType = Type::getVoidTy(Ctx);
-      //FunctionType *logFuncType = FunctionType::get(retType, paramTypes, false);
-      //FunctionCallee logFunc =
-      //    F.getParent()->getOrInsertFunction("logint", logFuncType);
-      
       std::vector<Type*> paramTypes = {};
       Type *retType = Type::getVoidTy(Ctx);
       FunctionType *logFuncType = FunctionType::get(retType, paramTypes, false);
       FunctionCallee allocFunc =
           F.getParent()->getOrInsertFunction("alloc_one", logFuncType);
 
-      //std::vector<Type*> paramTypes = {Type::getInt32Ty(Ctx)};
-      //Type *retType = Type::getVoidTy(Ctx);
-      //FunctionType *logFuncType = FunctionType::get(retType, paramTypes, false);
-      //FunctionCallee allocFunc =
-      //    F.getParent()->getOrInsertFunction("alloc_some", logFuncType);
+      auto& entryBlock = F.getEntryBlock();
+      //BasicBlock* block = &entryBlock;
+      //// I believe an empty block is ill-formed according to the LLVM spec, but
+      ////   I am running across them
+      //while (block->begin() == block->end()) {
+      //  block = block->getUniqueSuccessor();
+      //}
+      //IRBuilder<> builder(&*block->getFirstInsertionPt());
 
-      //auto& entryBlock = F.getEntryBlock();
-      //auto& entryBlock = *F.begin();
-      //auto& firstInstruction = *entryBlock.begin();
-      //IRBuilder<> builder(&firstInstruction);
-
-      for (auto &B : F) {
-        for (auto &I : B) {
-          if (auto* op = dyn_cast<BinaryOperator>(&I)) {
-            if (op->getOpcode() == Instruction::Add && (rand() % 10) == 0) {
-              IRBuilder<> builder(op);
-              builder.CreateCall(allocFunc);
-            }
-          }
-        }
-      }
+      IRBuilder<> builder(&entryBlock, entryBlock.getFirstInsertionPt());
+      builder.CreateCall(allocFunc);
     }
     return PreservedAnalyses::none();
   };
