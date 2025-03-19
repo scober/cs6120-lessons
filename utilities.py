@@ -396,7 +396,7 @@ def natural_loops(prog):
         entry = backedge[1]
         old_loop = set()
         while old_loop != loop:
-            old_loop = loop
+            old_loop = copy.deepcopy(loop)
             for member in loop:
                 if member == entry:
                     continue
