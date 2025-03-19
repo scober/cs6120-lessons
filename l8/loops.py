@@ -169,7 +169,7 @@ def natural_loops_command():
     """
     Discover and print out all natural loops in a program
     """
-    pprint.pprint(ut.natural_loops((json.load(sys.stdin))))
+    pprint.pprint(ut.natural_loops(json.load(sys.stdin)))
 
 
 @main.command(name="licm")
