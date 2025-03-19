@@ -1,0 +1,17 @@
+# ARGS: true
+@main(cond: bool) {
+  a: int = const 1;
+  b: int = const 2;
+  br cond .left .right;
+.left:
+  a: int = const 3;
+  b: int = const 3;
+  jmp .end;
+.right:
+  a: int = const 4;
+  b: int = const 4;
+  jmp .end;
+.end:
+  print a;
+  print b;
+}
