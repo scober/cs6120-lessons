@@ -166,7 +166,8 @@ def data_flow_analysis(
         ret[label][o] = merge(ins)
 
         in_before = ret[label][i]
-        in_after = transfer(copy.deepcopy(ret[label][o]), copy.deepcopy(block))
+        in_after = transfer(copy.deepcopy(ret[label][o]), copy.deepcopy(block), label)
+
         ret[label][i] = in_after
         if in_before != in_after:
             for pred in preds[label]:
