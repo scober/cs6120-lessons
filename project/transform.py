@@ -76,7 +76,7 @@ def pa_expressions(tree):
     return [
         expression
         for expression in expressions
-        if not any(expression in ast.iter_child_nodes(node) for node in expressions)
+        if find_parent(expression, tree) not in expressions
     ]
 
 
