@@ -1,5 +1,25 @@
-def eliminatable(n):
+def single_any(n):
     return any(n % i == 0 for i in range(n))
+
+
+def single_all(n):
+    return all(n % i == 0 for i in range(n))
+
+
+def nested_all_all(n):
+    return all(all(j % i == 0 for j in range(n)) for i in range(n))
+
+
+def nested_any_any(n):
+    return any(any(j % i == 0 for j in range(n)) for i in range(n))
+
+
+def nested_any_all(n):
+    return any(all(j % i == 0 for j in range(n)) for i in range(n))
+
+
+def nested_all_any(n):
+    return all(any(j % i == 0 for j in range(n)) for i in range(n))
 
 
 def non_eliminatable(n):
@@ -7,7 +27,12 @@ def non_eliminatable(n):
 
 
 def main():
-    print(eliminatable(6))
+    print(single_any(6))
+    print(single_all(6))
+    print(nested_all_all(6))
+    print(nested_any_any(6))
+    print(nested_any_all(6))
+    print(nested_all_any(6))
     print(non_eliminatable(6))
 
 
