@@ -21,6 +21,8 @@ def is_pa(node):
         return True
     if type(node) in [ast.Compare, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE]:
         return True
+    if type(node) in [ast.UnaryOp, ast.Not]:
+        return True
     if type(node) in [ast.BinOp, ast.Add, ast.Sub, ast.Mod]:
         return True
     if type(node) in [ast.BoolOp, ast.And, ast.Or]:
