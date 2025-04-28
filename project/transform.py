@@ -80,10 +80,60 @@ def pa_expressions(tree):
     ]
 
 
-def presburger_elimination_possibilities(file_contents):
-    parsed = ast.parse(file_contents)
-    expressions = pa_expressions(parsed)
-    return [expression for expression in expressions if is_candidate(expression)]
+def presburger_elimination_possibilities(tree):
+    yield from (
+        expression for expression in pa_expressions(tree) if is_candidate(expression)
+    )
+
+
+def remove_alls_from_subtree(tree, root):
+    for node in ast.iter_child_nodes(root):
+        remove_alls_from_subtree(tree, node)
+    if is_quantifier(root) and root.func.id == "all":
+        parent = find_parent(root, tree)
+        attr = None
+        for name, value in ast.iter_fields(parent):
+            if value == root:
+                attr = name
+        assert attr
+
+        # DeMorgan's Law:
+        # all(predicate) == not any(not predicate)
+        predicate = root.args[0]
+        demorganized = ast.UnaryOp(
+            ast.Not(),
+            ast.Call(
+                ast.Name("any", ast.Load()), [ast.UnaryOp(ast.Not(), predicate)], []
+            ),
+        )
+        setattr(parent, attr, demorganized)
+    return tree
+
+
+def remove_alls(tree, roots):
+    for root in roots:
+        remove_alls_from_subtree(tree, root)
+
+    return tree, roots
+
+
+def conjunctive_normal_form(tree, roots):
+    return tree, roots
+
+
+def eliminate_quantifiers(tree, roots):
+    return tree, roots
+
+
+def do_presburger_elimination(tree):
+    candidates = presburger_elimination_possibilities(tree)
+
+    # removing instances of all regularizes the tree
+    tree, roots = remove_alls(tree, candidates)
+    tree, roots = conjunctive_normal_form(tree, candidates)
+    tree, roots = eliminate_quantifiers(tree, candidates)
+
+    return tree
 
 
 @click.group
