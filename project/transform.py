@@ -1,3 +1,4 @@
+from pathlib import Path
 import ast
 import click
 
@@ -80,12 +81,24 @@ def cli():
     pass
 
 
+@cli.command(name="pass")
+@click.argument("filename", type=str)
+def transformation_pass_command(filename):
+    path = Path(filename)
+    with open(path, "r") as file:
+        # print(ast.dump(ast.parse(file.read()), indent=2))
+        transformed = do_presburger_elimination(ast.parse(file.read()))
+        transformed_path = path.with_stem(str(path.stem) + "_pa_qe")
+        with open(transformed_path, "w") as transformed_file:
+            transformed_file.write(ast.unparse(transformed))
+
+
 @cli.command(name="dry")
 @click.argument("filename", type=str)
 def dry_run_command(filename):
     print()
     with open(filename, "r") as file:
-        possibilities = presburger_elimination_possibilities(file.read())
+        possibilities = presburger_elimination_possibilities(ast.parse(file.read()))
         for expression in possibilities:
             if hasattr(expression, "lineno"):
                 print(f"beginning on line {expression.lineno}:")
