@@ -36,11 +36,19 @@ def is_pa(node):
     return False
 
 
-def is_candidate(node):
+def is_quantifier(node):
     return (
         type(node) == ast.Call
         and type(node.func) == ast.Name
         and node.func.id in ["any", "all"]
+    )
+
+
+def is_candidate(node):
+    return is_quantifier(node) or (
+        type(node) == ast.UnaryOp
+        and type(node.op) == ast.Not
+        and is_quantifier(node.operand)
     )
 
 
