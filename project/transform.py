@@ -107,14 +107,16 @@ def remove_alls_from_subtree(tree, root):
             ),
         )
         setattr(parent, attr, demorganized)
-    return tree
+    return tree, demorganized
 
 
 def remove_alls(tree, roots):
+    new_roots = set()
     for root in roots:
-        remove_alls_from_subtree(tree, root)
+        _, new_root = remove_alls_from_subtree(tree, root)
+        new_roots.add(new_root)
 
-    return tree, roots
+    return tree, new_roots
 
 
 def conjunctive_normal_form(tree, roots):
