@@ -2,6 +2,16 @@ import ast
 import click
 
 
+# this could be sped up by storing a parent mapping on the first call and just
+#   referring back to it on future calls
+def find_parent(node, tree):
+    for parent in ast.walk(tree):
+        if any(node == child for child in ast.iter_child_nodes(parent)):
+            return parent
+    assert False
+    return None
+
+
 # this is named a little misleadingly, but it does its best
 # this sort of test is actually not possible in general because Python variables
 #   don't have types associated with them
