@@ -1,5 +1,8 @@
 from pathlib import Path
+
 import ast
+import copy
+
 import click
 
 
@@ -112,7 +115,9 @@ def remove_alls_from_subtree(tree, root):
             return ast.UnaryOp(
                 ast.Not(),
                 ast.Call(
-                    ast.Name("any", ast.Load()), [ast.UnaryOp(ast.Not(), predicate)], []
+                    ast.Name("any", ast.Load()),
+                    [ast.UnaryOp(ast.Not(), predicate)],
+                    [],
                 ),
             )
 
@@ -239,7 +244,38 @@ def conjunctive_normal_form(tree, roots):
     return tree, new_roots
 
 
+def swap_any_with_or(any_node):
+    generator_node = any_node.args[0]
+    assert type(generator_node) == ast.GeneratorExp
+    or_node = generator_node.elt
+    if type(or_node) != ast.BoolOp or type(or_node.op) != ast.Or:
+        return any_node
+    left = copy.deepcopy(generator_node)
+    right = copy.deepcopy(generator_node)
+    anys = [
+        ast.Call(
+            ast.Name("any", ast.Load()),
+            [copy.deepcopy(generator_node)],
+            [],
+        )
+        for disjunct in or_node.values
+    ]
+    for a, d in zip(anys, or_node.values):
+        a.args[0].elt = d
+
+    return ast.BoolOp(ast.Or(), anys)
+
+
+# any(p or q) == any(p) or any(q)
 def push_down_anys(tree, roots):
+    # we need to do this in bottom-up order -- the spec does not promise that
+    #   ast.walk will iterate in that order, but it does
+    # so this is a little brittle but probably fine for this project
+    for root in roots:
+        for node in ast.walk(root):
+            if is_quantifier(node):
+                # there should be no more calls to all() left
+                replace_subtree(tree, node, swap_any_with_or)
     return tree, roots
 
 
@@ -270,6 +306,7 @@ def cli():
 def transformation_pass_command(filename):
     path = Path(filename)
     with open(path, "r") as file:
+        # print(ast.dump(ast.parse(file.read()), indent=2))
         transformed = do_presburger_elimination(ast.parse(file.read()))
         transformed_path = path.with_stem(str(path.stem) + "_pa_qe")
         with open(transformed_path, "w") as transformed_file:
