@@ -21,6 +21,9 @@ def is_pa(node):
         return True
     if type(node) in [ast.UnaryOp, ast.Not]:
         return True
+    # we can only do modulus by constants
+    if type(node) == ast.BinOp and type(node.op) == ast.Mod:
+        return type(node.right) == ast.Constant
     if type(node) in [ast.BinOp, ast.Add, ast.Sub, ast.Mod]:
         return True
     if type(node) in [ast.BoolOp, ast.And, ast.Or]:
