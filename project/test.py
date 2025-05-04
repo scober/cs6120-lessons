@@ -22,6 +22,10 @@ def inequality(n):
     return any(i + i != 22 or i != 3 for i in range(n + n))
 
 
+def vars_on_both_sides(n):
+    return any(i + i < 4 + i and 3 * i > 2 * n for i in range(n + n))
+
+
 def main():
     pass
 

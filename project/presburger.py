@@ -24,7 +24,12 @@ def is_presburger_expression(node):
         return True
     if node_type in [ast.Compare, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE]:
         return True
-    if node_type in [ast.BinOp, ast.Add, ast.Sub]:
+    if node_type == ast.BinOp:
+        if type(node.op) == ast.Mult:
+            return type(node.left) == ast.Constant or type(node.right) == ast.Constant
+        else:
+            return True
+    if node_type in [ast.BinOp, ast.Add, ast.Sub, ast.Mult]:
         return True
     if node_type in [ast.GeneratorExp, ast.comprehension]:
         return True
@@ -34,23 +39,23 @@ def is_presburger_expression(node):
     return False
 
 
-def remove_all(root):
+def remove_all(node):
     # DeMorgan's Law:
     # all(p for ...) === not any(not p for ...)
-    if root.func.id == "all":
-        root = ast.UnaryOp(
+    if node.func.id == "all":
+        node = ast.UnaryOp(
             ast.Not(),
             ast.Call(
                 ast.Name("any", ast.Load()),
-                root.args,
+                node.args,
                 [],
             ),
         )
-        generator = root.operand.args[0]
+        generator = node.operand.args[0]
         predicate = generator.elt
         generator.elt = ast.UnaryOp(ast.Not(), predicate)
 
-    return root
+    return node
 
 
 # this is called with an implicit "not" above the bool_op node
@@ -164,6 +169,67 @@ def push_down_any(node):
     return node
 
 
+def get_qvar(node):
+    return node.args[0].generators[0].target.id
+
+
+ONE_STRING = "XXX one YYY"
+
+
+def var_multiplicities(node, mults, multiplicity):
+    if type(node) == ast.Name and type(node.ctx) == ast.Load:
+        mults[node.id] = mults.get(node.id, 0) + multiplicity
+    elif type(node) == ast.Constant:
+        mults[ONE_STRING] = mults.get(ONE_STRING, 0) + multiplicity * node.value
+    elif type(node) == ast.BinOp and type(node.op) == ast.Mult:
+        const = node.left if type(node.left) == ast.Constant else node.right
+        other = node.right if type(node.left) == ast.Constant else node.left
+        var_multiplicities(other, mults, multiplicity * const.value)
+    elif type(node) == ast.BinOp and type(node.op) in [ast.Add, ast.Sub]:
+        var_multiplicities(node.left, mults, multiplicity)
+        if type(node.op) == ast.Sub:
+            multiplicity *= -1
+        var_multiplicities(node.right, mults, multiplicity)
+    else:
+        for child in ast.iter_child_nodes(node):
+            var_multiplicities(child, mults, multiplicity)
+
+
+def separate_qvar(compare, qv):
+    if type(compare) != ast.Compare:
+        return compare
+
+    assert len(compare.comparators) == 1, compare.comparators
+
+    left_mults = {}
+    var_multiplicities(compare.left, left_mults, 1)
+    right_mults = {}
+    var_multiplicities(compare.comparators[0], right_mults, 1)
+
+    qv_mult = left_mults.pop(qv, 0) - right_mults.pop(qv, 0)
+    left = ast.BinOp(ast.Constant(qv_mult), ast.Mult(), ast.Name(qv, ast.Load()))
+
+    right = ast.Constant(0)
+    allvars = set(left_mults.keys()).union(set(right_mults.keys()))
+    for var in allvars:
+        mult = right_mults.pop(var, 0) - left_mults.pop(var, 0)
+        var_expression = (
+            ast.Constant(mult)
+            if var == ONE_STRING
+            else ast.BinOp(ast.Constant(mult), ast.Mult(), ast.Name(var, ast.Load()))
+        )
+        right = ast.BinOp(right, ast.Add(), var_expression)
+
+    return ast.Compare(left, [compare.ops[0]], [right])
+
+
+# put all of our quanitifier variables on the left sides of our comparsions
+def separate_all_qvars(node):
+    qv = get_qvar(node)
+    modify_and_recurse(lambda n: separate_qvar(n, qv))(node)
+    return node
+
+
 def eliminate_quantifiers(root):
     return_negation = False
 
@@ -176,7 +242,11 @@ def eliminate_quantifiers(root):
     root = push_down_nots(root)
     root = remove_inequality_checks(root)
     root = cnf.conjunctivize(root)
+
     root = push_down_any(root)
     if type(root) != ast.Call:
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
+
+    root = separate_all_qvars(root)
+
     return ast.UnaryOp(ast.Not(), root) if return_negation else root
