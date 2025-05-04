@@ -18,6 +18,10 @@ def negation(n):
     return any(not (i + i < 22 or i > 3) for i in range(n + n))
 
 
+def equality(n):
+    return any(i + i == 22 and i < 33 for i in range(n + n))
+
+
 def inequality(n):
     return any(i + i != 22 or i != 3 for i in range(n + n))
 

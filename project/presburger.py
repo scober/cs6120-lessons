@@ -249,6 +249,29 @@ def unify_coefficients(node):
     return unify(node)
 
 
+# the intuition here is simple:
+# (y == x) and (x < z) === y < z
+def handle_equality(node):
+    equality_value = None
+    for child in ast.walk(node):
+        if type(child) == ast.Compare and type(child.ops[0]) == ast.Eq:
+            equality_value = child.comparators[0]
+    if equality_value:
+
+        @ast_utils.modify_and_recurse
+        def insert_equality_value(node):
+            if type(node) == ast.Compare:
+                if node.comparators[0] == equality_value:
+                    return ast.Constant(True)
+                node.left = equality_value
+            return node
+
+        insert_equality_value(node)
+        node = node.args[0].elt
+
+    return node
+
+
 def eliminate_quantifiers(root):
     return_negation = False
 
@@ -268,5 +291,6 @@ def eliminate_quantifiers(root):
 
     root = separate_all_qvars(root)
     root = unify_coefficients(root)
+    root = handle_equality(root)
 
     return ast.UnaryOp(ast.Not(), root) if return_negation else root
