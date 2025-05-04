@@ -1,5 +1,6 @@
 import ast
 import copy
+import math
 
 import cnf
 
@@ -230,6 +231,39 @@ def separate_all_qvars(node):
     return node
 
 
+def unify_coefficients(node):
+    qv = get_qvar(node)
+    coefficients = set()
+    for child in ast.walk(node):
+        if (
+            type(child) == ast.BinOp
+            and type(child.right) == ast.Name
+            and child.right.id == qv
+        ):
+            assert type(child.left) == ast.Constant, type(child.left)
+            coefficients.add(child.left.value)
+    lcm = math.lcm(*coefficients)
+
+    @modify_and_recurse
+    def unify(node):
+        if type(node) == ast.Compare:
+            assert type(node.left) == ast.BinOp
+            assert type(node.left.op) == ast.Mult
+            assert type(node.left.left) == ast.Constant
+
+            current = node.left.left.value
+            adjustment = lcm // current
+            assert current * adjustment == lcm
+
+            node.left.left.value = lcm
+            node.comparators = [
+                ast.BinOp(ast.Constant(adjustment), ast.Mult(), node.comparators[0])
+            ]
+        return node
+
+    return unify(node)
+
+
 def eliminate_quantifiers(root):
     return_negation = False
 
@@ -248,5 +282,6 @@ def eliminate_quantifiers(root):
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
 
     root = separate_all_qvars(root)
+    root = unify_coefficients(root)
 
     return ast.UnaryOp(ast.Not(), root) if return_negation else root
