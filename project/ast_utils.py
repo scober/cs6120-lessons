@@ -25,3 +25,19 @@ def is_candidate(node):
         and type(node.op) == ast.Not
         and is_quantifier(node.operand)
     )
+
+
+def modify_and_recurse(f):
+    def recursive(node):
+        node = f(node)
+
+        if isinstance(node, ast.AST):
+            for name, value in ast.iter_fields(node):
+                if type(value) == list:
+                    setattr(node, name, [recursive(child) for child in value])
+                else:
+                    setattr(node, name, recursive(value))
+
+        return node
+
+    return recursive

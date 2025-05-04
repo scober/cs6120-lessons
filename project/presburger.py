@@ -2,6 +2,7 @@ import ast
 import copy
 import math
 
+import ast_utils
 import cnf
 
 
@@ -95,23 +96,7 @@ def invert_comparison(compare):
     return ast.Compare(left, [swap[comparison_type]()], [right])
 
 
-def modify_and_recurse(f):
-    def recursive(node):
-        node = f(node)
-
-        if isinstance(node, ast.AST):
-            for name, value in ast.iter_fields(node):
-                if type(value) == list:
-                    setattr(node, name, [recursive(child) for child in value])
-                else:
-                    setattr(node, name, recursive(value))
-
-        return node
-
-    return recursive
-
-
-@modify_and_recurse
+@ast_utils.modify_and_recurse
 def push_down_nots(node):
     if type(node) == ast.UnaryOp and type(node.operand) in [
         ast.BoolOp,
@@ -130,7 +115,7 @@ def push_down_nots(node):
     return node
 
 
-@modify_and_recurse
+@ast_utils.modify_and_recurse
 def remove_inequality_checks(node):
     # because everything is an integer we have the following property:
     # a != b === (a < b) or (a > b)
@@ -227,7 +212,7 @@ def separate_qvar(compare, qv):
 # put all of our quanitifier variables on the left sides of our comparsions
 def separate_all_qvars(node):
     qv = get_qvar(node)
-    modify_and_recurse(lambda n: separate_qvar(n, qv))(node)
+    ast_utils.modify_and_recurse(lambda n: separate_qvar(n, qv))(node)
     return node
 
 
@@ -244,7 +229,7 @@ def unify_coefficients(node):
             coefficients.add(child.left.value)
     lcm = math.lcm(*coefficients)
 
-    @modify_and_recurse
+    @ast_utils.modify_and_recurse
     def unify(node):
         if type(node) == ast.Compare:
             assert type(node.left) == ast.BinOp
