@@ -11,32 +11,6 @@ def find_parent(node, tree):
     return None
 
 
-# this is named a little misleadingly, but it does its best
-# this sort of test is actually not possible in general because Python variables
-#   don't have types associated with them
-def is_pa(node):
-    if type(node) == ast.Constant and type(node.value) == int:
-        return True
-    if type(node) in [ast.Compare, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE]:
-        return True
-    if type(node) in [ast.UnaryOp, ast.Not]:
-        return True
-    # we can only do modulus by constants
-    if type(node) == ast.BinOp and type(node.op) == ast.Mod:
-        return type(node.right) == ast.Constant
-    if type(node) in [ast.BinOp, ast.Add, ast.Sub, ast.Mod]:
-        return True
-    if type(node) in [ast.BoolOp, ast.And, ast.Or]:
-        return True
-    if type(node) in [ast.Name, ast.Load, ast.Store]:
-        return True
-    if type(node) == ast.Call:
-        return type(node.func) == ast.Name and node.func.id in ["any", "all", "range"]
-    if type(node) in [ast.comprehension, ast.GeneratorExp]:
-        return True
-    return False
-
-
 def is_quantifier(node):
     return (
         type(node) == ast.Call
