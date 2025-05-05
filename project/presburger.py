@@ -1,5 +1,6 @@
 import ast
 import copy
+import itertools
 import math
 
 import ast_utils
@@ -181,6 +182,19 @@ def insert_bounds(node):
     return node
 
 
+@ast_utils.modify_and_recurse
+def remove_or_equals(node):
+    if type(node) == ast.Compare and type(node.ops[0]) in [ast.LtE, ast.GtE]:
+        new_op = ast.Lt() if node.ops[0] == ast.LtE else ast.Gt()
+        adjustment = ast.Add() if node.ops[0] == ast.LtE else ast.Sub()
+        node = ast.Compare(
+            node.left,
+            [new_op],
+            [ast.BinOp(node.comparators[0], adjustment, ast.Constant(1))],
+        )
+    return node
+
+
 ONE_STRING = "XXX one YYY"
 
 
@@ -294,6 +308,90 @@ def handle_equality(node):
     return node
 
 
+# high level idea:
+# our big predicate has two kinds of comparisons:
+#   my < t_i(x)
+#   and
+#   my > t_j(x)
+# where "x" is standing in here for the full set of free variables in our big
+#   predicate
+# for any given x, there will be a least t_i and a greatest t_j and the range
+#   defined by those values will be the only thing we have to check m*y against
+# it is possible to statically unroll the search for the least t_i and greatest
+#   t_j in pure predicate logic:
+#     do a disjunction over every unique t_i, t_j pair where
+#     every disjunct checks whether there is a m*y value in the range (t_j, t_i)
+#     and also asserts that t_j and t_i are maximal/minimal
+#     (i.e. t_i < other_t_i and t_i < other_other_t_i and ... etc.)
+#     then only the disjunct for the actual maximal/minimal pair will ever be
+#     true and the truth value of the whole predicate will boil down to the
+#     truth value of the m*y check
+# HOWEVER!
+# in an imperative programming language we don't need to do the full unrolling,
+#   we can just dynamically find the least and greatest element and do the check!
+# Finally, we can do the actual "m*y check" by checking if there is some value
+#   in the range (t_j, t_i) that is divisible my m
+# there are a handful of ways to do that check:
+#   1. The "proper first order logic Presburger Arithmetic" way is to statically
+#      unroll a loop that checks the first m values after t_j:
+#      ((t_j + 1 % m == 0) and (t_j + 1 < t_i)) or ((t_j + 2 % m == 0) and ...
+#   2. Ironically, in Python a natural way would be to add in a new
+#      "quantifier":
+#      any(x % m == 0 for x in range(t_j+1, t_i))
+#   3. But I think the cheapest option is the following:
+#      (t_i - t_j > m) or (t_i % m < t_j % m)
+#      i.e. if there are m or more numbers in the range then one of them must be
+#      divisible by m and if not, we just need to check for a "wrap-around"
+#      between the beginning and end of the range
+#
+def handle_inequality(node):
+    less_thans = set()
+    greater_thans = set()
+    m = None
+    qv = get_qvar(node)
+    for child in ast.walk(node):
+        if type(child) == ast.Compare:
+            if type(child.ops[0]) == ast.Lt:
+                less_thans.add(child.comparators[0])
+            elif type(child.ops[0]) == ast.Gt:
+                greater_thans.add(child.comparators[0])
+            else:
+                assert False, "unreachable"
+        elif (
+            type(child) == ast.BinOp
+            and type(child.op) == ast.Mult
+            and type(child.right) == ast.Name
+            and child.right.id == qv
+        ):
+            m = child.left
+
+    assert m
+    assert less_thans
+    assert greater_thans
+
+    greatest_lt = (
+        less_thans.pop()
+        if len(less_thans) == 1
+        else ast.Call(ast.Name("max", ast.Load()), list(less_thans), [])
+    )
+    least_gt = (
+        greater_thans.pop()
+        if len(greater_thans) == 1
+        else ast.Call(ast.Name("min", ast.Load()), list(greater_thans), [])
+    )
+
+    range_check = ast.Compare(
+        ast.BinOp(least_gt, ast.Sub(), greatest_lt), [ast.Gt()], [m]
+    )
+    wraparound_check = ast.Compare(
+        ast.BinOp(least_gt, ast.Mod(), m),
+        [ast.Lt()],
+        [ast.BinOp(greatest_lt, ast.Mod(), m)],
+    )
+
+    return ast.BoolOp(ast.Or(), [range_check, wraparound_check])
+
+
 def eliminate_quantifiers(root):
     return_negation = False
 
@@ -312,8 +410,14 @@ def eliminate_quantifiers(root):
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
 
     root = insert_bounds(root)
+    root = remove_or_equals(root)
     root = separate_all_qvars(root)
     root = unify_coefficients(root)
+
     root = handle_equality(root)
+    if type(root) != ast.Call:
+        return ast.UnaryOp(ast.Not(), root) if return_negation else root
+
+    root = handle_inequality(root)
 
     return ast.UnaryOp(ast.Not(), root) if return_negation else root
