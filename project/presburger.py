@@ -26,17 +26,16 @@ def is_presburger_expression(node):
         return True
     if node_type in [ast.Compare, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE]:
         return True
-    if node_type == ast.BinOp:
-        if type(node.op) == ast.Mult:
-            return type(node.left) == ast.Constant or type(node.right) == ast.Constant
-        else:
-            return True
+    if node_type == ast.BinOp and type(node.op) == ast.Mult:
+        return type(node.left) == ast.Constant or type(node.right) == ast.Constant
     if node_type in [ast.BinOp, ast.Add, ast.Sub, ast.Mult]:
         return True
     if node_type in [ast.GeneratorExp, ast.comprehension]:
         return True
-    if node_type == ast.Call:
-        return type(node.func) == ast.Name and node.func.id in ["any", "all", "range"]
+    if node_type == ast.Call and type(node.func) == ast.Name:
+        return node.func.id in ["any", "all"] or (
+            node.func.id == "range" and len(node.args) <= 2
+        )
 
     return False
 
@@ -157,6 +156,29 @@ def push_down_any(node):
 
 def get_qvar(node):
     return node.args[0].generators[0].target.id
+
+
+def get_bounds(node):
+    range_args = node.args[0].generators[0].iter.args
+    lower_bound = ast.Constant(0) if len(range_args) == 1 else range_args[0]
+    upper_bound = range_args[-1]
+    return lower_bound, upper_bound
+
+
+def insert_bounds(node):
+    qv = get_qvar(node)
+    lower_bound, upper_bound = get_bounds(node)
+    predicate = node.args[0].elt
+    predicate = ast.BoolOp(
+        ast.And(),
+        [
+            ast.Compare(ast.Name(qv, ast.Load()), [ast.GtE()], [lower_bound]),
+            ast.Compare(ast.Name(qv, ast.Load()), [ast.Lt()], [upper_bound]),
+            predicate,
+        ],
+    )
+    node.args[0].elt = predicate
+    return node
 
 
 ONE_STRING = "XXX one YYY"
@@ -289,6 +311,7 @@ def eliminate_quantifiers(root):
     if type(root) != ast.Call:
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
 
+    root = insert_bounds(root)
     root = separate_all_qvars(root)
     root = unify_coefficients(root)
     root = handle_equality(root)
