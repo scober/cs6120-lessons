@@ -46,9 +46,7 @@ def do_presburger_elimination(tree):
     while roots and DEBUG_COUNTER < 4:
         DEBUG_COUNTER += 1
         for root in roots:
-            # print(ast.dump(tree, indent=2))
             replace_subtree(tree, root, presburger.eliminate_quantifiers)
-            # print(ast.dump(tree, indent=2))
         roots = unnested_presburger_quantifiers(tree)
 
     return tree
@@ -64,11 +62,10 @@ def cli():
 def transformation_pass_command(filename):
     path = Path(filename)
     with open(path, "r") as file:
-        # print(ast.dump(ast.parse(file.read()), indent=2))
         transformed = do_presburger_elimination(ast.parse(file.read()))
+        transformed = ast_utils.simplify(transformed)
         transformed_path = path.with_stem(str(path.stem) + "_pa_qe")
         with open(transformed_path, "w") as transformed_file:
-            # print(ast.dump(transformed, indent=2))
             transformed_file.write(ast.unparse(transformed))
 
 
@@ -77,7 +74,6 @@ def transformation_pass_command(filename):
 def dry_run_command(filename):
     print()
     with open(filename, "r") as file:
-        # print(ast.dump(ast.parse(file.read()), indent=2))
         possibilities = unnested_presburger_quantifiers(ast.parse(file.read()))
         for expression in possibilities:
             if hasattr(expression, "lineno"):
