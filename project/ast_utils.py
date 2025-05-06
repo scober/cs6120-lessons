@@ -63,20 +63,48 @@ def recurse_and_modify(f):
 # other things that would be nice to have:
 #   more robust constant folding, specifically for expressions like
 #     <constant> * (<constant> * <var>)
-#   constant folding for boolean comparison operators
 @recurse_and_modify
 def simplify(node):
+    if (
+        type(node) == ast.Compare
+        and type(node.left) == ast.Constant
+        and type(node.comparators[0]) == ast.Constant
+    ):
+        op_type = type(node.ops[0])
+        l = node.left.value
+        r = node.comparators[0].value
+        if op_type == ast.Lt:
+            return ast.Constant(l < r)
+        if op_type == ast.Gt:
+            return ast.Constant(l > r)
+        if op_type == ast.LtE:
+            return ast.Constant(l <= r)
+        if op_type == ast.GtE:
+            return ast.Constant(l >= r)
+        if op_type == ast.Eq:
+            return ast.Constant(l == r)
+        if op_type == ast.NotEq:
+            return ast.Constant(l != r)
+
     if type(node) == ast.BoolOp:
         if type(node.op) == ast.Or:
             if any(type(v) == ast.Constant and v.value == True for v in node.values):
                 return ast.Constant(True)
             node.values = list(filter(lambda v: type(v) != ast.Constant, node.values))
-            return node
+            return (
+                node
+                if len(node.values) > 1
+                else node.values[0] if len(node.values) == 1 else ast.Constant(True)
+            )
         elif type(node.op) == ast.And:
             if any(type(v) == ast.Constant and v.value == False for v in node.values):
                 return ast.Constant(False)
             node.values = list(filter(lambda v: type(v) != ast.Constant, node.values))
-            return node
+            return (
+                node
+                if len(node.values) > 1
+                else node.values[0] if len(node.values) == 1 else ast.Constant(True)
+            )
 
     if type(node) == ast.BinOp:
         if type(node.left) == ast.Constant and type(node.right) == ast.Constant:
@@ -96,4 +124,5 @@ def simplify(node):
                 type(node.op) == ast.Mult and node.right.value == 1
             ):
                 return node.left
+
     return node
