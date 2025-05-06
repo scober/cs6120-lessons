@@ -42,12 +42,10 @@ def do_presburger_elimination(tree):
     # we don't want to lazily evaluate this generator because we are going to be
     #   modifying the tree in place
     roots = list(unnested_presburger_quantifiers(tree))
-    DEBUG_COUNTER = 0
-    while roots and DEBUG_COUNTER < 4:
-        DEBUG_COUNTER += 1
+    while roots:
         for root in roots:
             replace_subtree(tree, root, presburger.eliminate_quantifiers)
-        roots = unnested_presburger_quantifiers(tree)
+        roots = list(unnested_presburger_quantifiers(tree))
 
     return tree
 
