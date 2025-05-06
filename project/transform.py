@@ -2,6 +2,7 @@ from pathlib import Path
 
 import ast
 import copy
+import os
 
 import click
 
@@ -67,20 +68,31 @@ def transformation_pass_command(filename):
             transformed_file.write(ast.unparse(transformed))
 
 
-@cli.command(name="dry")
-@click.argument("filename", type=str)
-def dry_run_command(filename):
-    print()
+def print_possibilities(filename):
+    print(filename)
     with open(filename, "r") as file:
         possibilities = unnested_presburger_quantifiers(ast.parse(file.read()))
         for expression in possibilities:
             if hasattr(expression, "lineno"):
-                print(f"beginning on line {expression.lineno}:")
+                print(f"  beginning on line {expression.lineno}:")
             else:
-                print(f"beginning on unknown line:")
-            print("  ", end="")
+                print(f"  beginning on unknown line:")
+            print("    ", end="")
             print(ast.unparse(expression))
             print()
+
+
+@cli.command(name="dry")
+@click.argument("file_or_dir", type=str)
+def dry_run_command(file_or_dir):
+    print()
+    if os.path.isfile(file_or_dir):
+        print_possibilities(file_or_dir)
+    else:
+        for root, _, files in os.walk(file_or_dir):
+            for file in files:
+                if file.endswith(".py"):
+                    print_possibilities(os.path.join(root, file))
 
 
 if __name__ == "__main__":
