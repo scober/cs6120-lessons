@@ -6,6 +6,8 @@ def simple_two(n):
     return all(i + i < 22 for i in range(n + n))
 
 
+# we can't currently handle nested quantifiers because we generate
+#   non-presburger expressions as part of our qe pass
 def nested(n):
     return all(any(i + i < 22 for i in range(n + j)) for j in range(n + n))
 
