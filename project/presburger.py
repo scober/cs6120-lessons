@@ -173,7 +173,7 @@ def remove_independent_predicates(node):
     independents = []
 
     if type(node.args[0].elt) == ast.Constant:
-        return node
+        return node if node.args[0].elt.value else ast.Constant(False)
 
     @ast_utils.modify_and_recurse
     def remove_independent_conjuncts(node):
@@ -424,7 +424,6 @@ def handle_inequality(node):
 
 
 def eliminate_quantifiers(root):
-
     return_negation = False
 
     root = ast_utils.simplify(root)
