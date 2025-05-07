@@ -28,13 +28,19 @@ def replace_subtree(tree, root, transform):
 
 def unnested_presburger_quantifiers(tree):
     return filter(
-        lambda node: all(
-            descendent == node or not ast_utils.is_quantifier(descendent)
+        lambda node: any(
+            type(descendent) == ast.Name and descendent.id == "range"
             for descendent in ast.walk(node)
         ),
         filter(
-            ast_utils.is_quantifier,
-            filter(presburger.is_presburger_expression, ast.walk(tree)),
+            lambda node: all(
+                descendent == node or not ast_utils.is_quantifier(descendent)
+                for descendent in ast.walk(node)
+            ),
+            filter(
+                ast_utils.is_quantifier,
+                filter(presburger.is_presburger_expression, ast.walk(tree)),
+            ),
         ),
     )
 
@@ -69,9 +75,15 @@ def transformation_pass_command(filename):
 
 
 def print_possibilities(filename):
-    print(filename)
     with open(filename, "r") as file:
-        possibilities = unnested_presburger_quantifiers(ast.parse(file.read()))
+        try:
+            possibilities = list(
+                unnested_presburger_quantifiers(ast.parse(file.read()))
+            )
+        except:
+            return
+        if possibilities:
+            print(filename)
         for expression in possibilities:
             if hasattr(expression, "lineno"):
                 print(f"  beginning on line {expression.lineno}:")
