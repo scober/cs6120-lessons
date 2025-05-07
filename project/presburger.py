@@ -372,7 +372,7 @@ def handle_inequality(node):
     least_lt = (
         less_thans.pop()
         if len(less_thans) == 1
-        else ast.Call(ast.Name("mind", ast.Load()), list(less_thans), [])
+        else ast.Call(ast.Name("min", ast.Load()), list(less_thans), [])
     )
     greatest_gt = (
         greater_thans.pop()
