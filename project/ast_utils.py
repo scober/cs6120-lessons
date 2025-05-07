@@ -86,6 +86,11 @@ def simplify(node):
         if op_type == ast.NotEq:
             return ast.Constant(l != r)
 
+    if type(node) == ast.UnaryOp:
+        if type(node.op) == ast.USub:
+            if type(node.operand) == ast.Constant:
+                return ast.Constant(-1 * node.operand.value)
+
     if type(node) == ast.BoolOp:
         if type(node.op) == ast.Or:
             if any(type(v) == ast.Constant and v.value == True for v in node.values):
@@ -107,6 +112,19 @@ def simplify(node):
             )
 
     if type(node) == ast.BinOp:
+        if (
+            type(node.op) == ast.Mod
+            and type(node.right) == ast.Constant
+            and node.right.value == 1
+        ):
+            return ast.Constant(0)
+        if (
+            type(node.op) == ast.Sub
+            and type(node.right) == ast.Constant
+            and node.right.value < 0
+        ):
+            return ast.BinOp(node.left, ast.Add(), ast.Constant(-1 * node.right.value))
+
         if type(node.left) == ast.Constant and type(node.right) == ast.Constant:
             if type(node.op) == ast.Add:
                 return ast.Constant(node.left.value + node.right.value)
