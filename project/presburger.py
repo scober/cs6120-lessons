@@ -15,15 +15,17 @@ def is_presburger_expression(node):
 
     # a few things we want to treat as base cases (i.e. not recurse even though
     #   the nodes have children
-    if node_type == ast.Name:
+    if node_type in [ast.Name, ast.Load, ast.Store]:
         return True
     if node_type == ast.Constant:
-        return type(node.value) == int
+        return type(node.value) == int or type(node.value) == bool
 
     if not all(is_presburger_expression(child) for child in ast.iter_child_nodes(node)):
         return False
 
-    if node_type in [ast.BoolOp, ast.And, ast.Or, ast.UnaryOp, ast.Not]:
+    if node_type in [ast.UnaryOp, ast.Not, ast.USub]:
+        return True
+    if node_type in [ast.BoolOp, ast.And, ast.Or]:
         return True
     if node_type in [ast.Compare, ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE]:
         return True
@@ -157,6 +159,26 @@ def push_down_any(node):
 
 def get_qvar(node):
     return node.args[0].generators[0].target.id
+
+
+def var_in_predicate(var, node):
+    return any(type(child) == ast.Name and child.id == var for child in ast.walk(node))
+
+
+def remove_independent_predicates(node):
+    qv = get_qvar(node)
+    independents = []
+
+    @ast_utils.modify_and_recurse
+    def remove_independent_conjuncts(node):
+        if type(node) == ast.Compare and not var_in_predicate(qv, node):
+            independents.append(node)
+            return ast.Constant(True)
+        return node
+
+    node = ast_utils.simplify(remove_independent_conjuncts(node))
+
+    return ast.BoolOp(ast.And(), independents + [node]) if independents else node
 
 
 def get_bounds(node):
@@ -395,6 +417,8 @@ def handle_inequality(node):
 def eliminate_quantifiers(root):
     return_negation = False
 
+    root = ast_utils.simplify(root)
+
     root = remove_all(root)
     if type(root) == ast.UnaryOp:
         assert type(root.op) == ast.Not, type(root.op)
@@ -406,6 +430,10 @@ def eliminate_quantifiers(root):
     root = cnf.conjunctivize(root)
 
     root = push_down_any(root)
+    if type(root) != ast.Call:
+        return ast.UnaryOp(ast.Not(), root) if return_negation else root
+
+    root = remove_independent_predicates(root)
     if type(root) != ast.Call:
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
 
