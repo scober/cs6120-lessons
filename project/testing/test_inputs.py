@@ -10,7 +10,7 @@ def cli():
 
 @cli.command
 def one():
-    for n in range(-10000, 10000):
+    for n in range(-10, 10):
         print(n)
 
 

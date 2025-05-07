@@ -1,8 +1,8 @@
 import sys
 
 
-def f(n):
-    return any((-154 * (193 * n) - n == 34 for i in range(-94 * (-240 - -243))))
+def f(n, m):
+    return all((-20 == 33 or -37 >= 5 for i in range(-27 * 25)))
 
 
 if __name__ == '__main__':

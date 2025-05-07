@@ -23,11 +23,15 @@ def test_file(function_body):
 
 
 def constant():
-    return ast.Constant(random.randint(-250, 250))
+    return ast.Constant(random.randint(-50, 50))
 
 
 def arithmetic_expression(free_vars):
-    op = random.choice([ast.Constant, ast.Name, ast.Mult, ast.Add, ast.Sub])
+    # make constants more common to avoid super deep expressions
+    #   (super deep expressions result in large numbers take forever to run)
+    op = random.choice(
+        ([ast.Constant] * 2) + ([ast.Name] * 4) + [ast.Mult, ast.Add, ast.Sub]
+    )
     if op == ast.Constant:
         return constant()
     elif op == ast.Name:
@@ -41,12 +45,14 @@ def arithmetic_expression(free_vars):
 
 
 def boolean_predicate(free_vars):
-    op = random.choice([ast.And, ast.Or] + ([ast.Compare] * 8))
+    op = random.choice([ast.Not, ast.And, ast.Or] + ([ast.Compare] * 3))
     if op == ast.Compare:
         c = random.choice([ast.Eq, ast.NotEq, ast.Lt, ast.LtE, ast.Gt, ast.GtE])
         return ast.Compare(
             arithmetic_expression(free_vars), [c()], [arithmetic_expression(free_vars)]
         )
+    elif op == ast.Not:
+        return ast.UnaryOp(ast.Not(), boolean_predicate(free_vars))
     else:
         return ast.BoolOp(
             op(), [boolean_predicate(free_vars), boolean_predicate(free_vars)]
@@ -63,7 +69,7 @@ def range_call(free_vars):
 
 def generator_expression(free_vars):
     return ast.GeneratorExp(
-        boolean_predicate(free_vars),
+        boolean_predicate(free_vars + ["i"]),
         [ast.comprehension(ast.Name("i", ast.Store()), range_call(free_vars), [], 0)],
     )
 
@@ -76,13 +82,13 @@ def quantifier_expression(free_vars):
     )
 
 
-def one_var_function():
-    func_body = ast.Return(quantifier_expression(["n"]))
+def f_function(arg_names):
+    func_body = ast.Return(quantifier_expression(arg_names))
     f = ast.FunctionDef(
         name="f",
         args=ast.arguments(
             posonlyargs=[],
-            args=[ast.arg(arg="n")],
+            args=[ast.arg(arg=a) for a in arg_names],
             kwonlyargs=[],
             kw_defaults=[],
             defaults=[],
@@ -102,7 +108,17 @@ def cli():
 
 @cli.command
 def one():
-    print(test_file(one_var_function()))
+    print(test_file(f_function(["n"])))
+
+
+@cli.command
+def two():
+    print(test_file(f_function(["m", "n"])))
+
+
+@cli.command
+def three():
+    print(test_file(f_function(["l", "m", "n"])))
 
 
 if __name__ == "__main__":
