@@ -369,24 +369,24 @@ def handle_inequality(node):
     assert less_thans
     assert greater_thans
 
-    greatest_lt = (
+    least_lt = (
         less_thans.pop()
         if len(less_thans) == 1
-        else ast.Call(ast.Name("max", ast.Load()), list(less_thans), [])
+        else ast.Call(ast.Name("mind", ast.Load()), list(less_thans), [])
     )
-    least_gt = (
+    greatest_gt = (
         greater_thans.pop()
         if len(greater_thans) == 1
-        else ast.Call(ast.Name("min", ast.Load()), list(greater_thans), [])
+        else ast.Call(ast.Name("max", ast.Load()), list(greater_thans), [])
     )
 
     range_check = ast.Compare(
-        ast.BinOp(least_gt, ast.Sub(), greatest_lt), [ast.Gt()], [m]
+        ast.BinOp(least_lt, ast.Sub(), greatest_gt), [ast.Gt()], [m]
     )
     wraparound_check = ast.Compare(
-        ast.BinOp(least_gt, ast.Mod(), m),
+        ast.BinOp(greatest_gt, ast.Mod(), m),
         [ast.Lt()],
-        [ast.BinOp(greatest_lt, ast.Mod(), m)],
+        [ast.BinOp(least_lt, ast.Mod(), m)],
     )
 
     return ast.BoolOp(ast.Or(), [range_check, wraparound_check])
