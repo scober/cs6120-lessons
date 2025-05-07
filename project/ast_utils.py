@@ -87,6 +87,8 @@ def simplify(node):
             return ast.Constant(l != r)
 
     if type(node) == ast.UnaryOp:
+        if type(node.op) == ast.Not and type(node.operand) == ast.Constant:
+            return ast.Constant(not node.operand.value)
         if type(node.op) == ast.USub:
             if type(node.operand) == ast.Constant:
                 return ast.Constant(-1 * node.operand.value)
