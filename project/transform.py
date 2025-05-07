@@ -39,7 +39,10 @@ def unnested_presburger_quantifiers(tree):
             ),
             filter(
                 ast_utils.is_quantifier,
-                filter(presburger.is_presburger_expression, ast.walk(tree)),
+                filter(
+                    presburger.is_presburger_expression,
+                    ast.walk(ast_utils.simplify(tree)),
+                ),
             ),
         ),
     )
