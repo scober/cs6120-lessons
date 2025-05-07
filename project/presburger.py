@@ -172,6 +172,9 @@ def remove_independent_predicates(node):
     qv = get_qvar(node)
     independents = []
 
+    if type(node.args[0].elt) == ast.Constant:
+        return node
+
     @ast_utils.modify_and_recurse
     def remove_independent_conjuncts(node):
         if type(node) == ast.Compare and not var_in_predicate(qv, node):
@@ -421,6 +424,7 @@ def handle_inequality(node):
 
 
 def eliminate_quantifiers(root):
+
     return_negation = False
 
     root = ast_utils.simplify(root)
