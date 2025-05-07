@@ -101,7 +101,7 @@ def simplify(node):
             return (
                 node
                 if len(node.values) > 1
-                else node.values[0] if len(node.values) == 1 else ast.Constant(True)
+                else node.values[0] if len(node.values) == 1 else ast.Constant(False)
             )
         elif type(node.op) == ast.And:
             if any(type(v) == ast.Constant and v.value == False for v in node.values):
