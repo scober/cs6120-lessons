@@ -104,6 +104,7 @@ def push_down_nots(node):
         ast.BoolOp,
         ast.Compare,
         ast.UnaryOp,
+        ast.Constant,
     ]:
         assert type(node.op) == ast.Not, type(node.op)
 
@@ -114,6 +115,8 @@ def push_down_nots(node):
         elif type(node.operand) == ast.UnaryOp:
             assert type(node.operand.op) == ast.Not, type(node.operand.op)
             node = node.operand.operand
+        elif type(node.operand) == ast.Constant:
+            node = ast.Constant(not node.operand.value)
     return node
 
 
@@ -172,6 +175,9 @@ def remove_independent_predicates(node):
     @ast_utils.modify_and_recurse
     def remove_independent_conjuncts(node):
         if type(node) == ast.Compare and not var_in_predicate(qv, node):
+            independents.append(node)
+            return ast.Constant(True)
+        if type(node) == ast.Constant and type(node.value) == bool:
             independents.append(node)
             return ast.Constant(True)
         return node
