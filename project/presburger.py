@@ -287,7 +287,8 @@ def separate_all_qvars(node):
 def push_down_multiplies(node):
     if type(node) == ast.BinOp and type(node.op) == ast.Mult:
         if type(node.left) == ast.BinOp:
-            assert type(node.right) == ast.Constant
+            if type(node.right) != ast.Constant:
+                return node
             if type(node.left.op) in [ast.Add, ast.Sub]:
                 return ast.BinOp(
                     ast.BinOp(node.right, ast.Mult(), node.left.left),
@@ -301,7 +302,8 @@ def push_down_multiplies(node):
                     node.left.right,
                 )
         elif type(node.right) == ast.BinOp:
-            assert type(node.left) == ast.Constant
+            if type(node.left) != ast.Constant:
+                return node
             if type(node.right.op) in [ast.Add, ast.Sub]:
                 return ast.BinOp(
                     ast.BinOp(node.left, ast.Mult(), node.right.left),
@@ -333,6 +335,7 @@ def unify_coefficients(node):
     @ast_utils.modify_and_recurse
     def unify(node):
         if type(node) == ast.Compare:
+            current = None
             if type(node.left) == ast.BinOp:
                 assert type(node.left) == ast.BinOp, ast.dump(node, indent=2)
                 assert type(node.left.op) == ast.Mult
@@ -343,6 +346,7 @@ def unify_coefficients(node):
                 assert node.left.id == qv
                 current = 1
 
+            assert current != None, ast.dump(node, indent=2)
             adjustment = lcm // current
             assert current * adjustment == lcm
 
@@ -417,7 +421,7 @@ def handle_equality(node):
 #      "quantifier":
 #      any(x % m == 0 for x in range(t_j+1, t_i))
 #   3. But I think the cheapest option is the following:
-#      (t_i - t_j > m) or (t_i % m < t_j % m)
+#      (t_i - t_j > m) or (0 < t_i % m < t_j % m)
 #      i.e. if there are m or more numbers in the range then one of them must be
 #      divisible by m and if not, we just need to check for a "wrap-around"
 #      between the beginning and end of the range
@@ -464,9 +468,9 @@ def handle_inequality(node):
         ast.BinOp(least_ub, ast.Sub(), greatest_lb), [ast.Gt()], [m]
     )
     wraparound_check = ast.Compare(
-        ast.BinOp(least_ub, ast.Mod(), m),
-        [ast.Lt()],
-        [ast.BinOp(greatest_lb, ast.Mod(), m)],
+        ast.Constant(0),
+        [ast.Lt(), ast.Lt()],
+        [ast.BinOp(least_ub, ast.Mod(), m), ast.BinOp(greatest_lb, ast.Mod(), m)],
     )
 
     return ast.BoolOp(ast.Or(), [range_check, wraparound_check])
@@ -492,14 +496,15 @@ def eliminate_quantifiers(root):
     if type(root) != ast.Call:
         return ast.UnaryOp(ast.Not(), root) if return_negation else root
 
-    root = remove_independent_predicates(root)
-    if type(root) != ast.Call:
-        return ast.UnaryOp(ast.Not(), root) if return_negation else root
-
     root = insert_bounds(root)
     root = remove_or_equals(root)
     root = separate_all_qvars(root)
     root = ast_utils.simplify(root)
+
+    root = remove_independent_predicates(root)
+    if type(root) != ast.Call:
+        return ast.UnaryOp(ast.Not(), root) if return_negation else root
+
     root = unify_coefficients(root)
 
     root = handle_equality(root)
