@@ -283,6 +283,26 @@ def separate_all_qvars(node):
     return node
 
 
+@ast_utils.recurse_and_modify
+def push_down_multiplies(node):
+    if type(node) == ast.BinOp and type(node.op) == ast.Mult:
+        if type(node.left) == ast.BinOp:
+            assert type(node.right) == ast.Constant
+            return ast.BinOp(
+                ast.BinOp(node.right, ast.Mult(), node.left.left),
+                node.left.op,
+                ast.BinOp(node.right, ast.Mult(), node.left.right),
+            )
+        elif type(node.right) == ast.BinOp:
+            assert type(node.left) == ast.Constant
+            return ast.BinOp(
+                ast.BinOp(node.left, ast.Mult(), node.right.left),
+                node.right.op,
+                ast.BinOp(node.left, ast.Mult(), node.right.right),
+            )
+    return node
+
+
 def unify_coefficients(node):
     qv = get_qvar(node)
     coefficients = set()
@@ -299,18 +319,31 @@ def unify_coefficients(node):
     @ast_utils.modify_and_recurse
     def unify(node):
         if type(node) == ast.Compare:
-            assert type(node.left) == ast.BinOp
-            assert type(node.left.op) == ast.Mult
-            assert type(node.left.left) == ast.Constant
+            if type(node.left) == ast.BinOp:
+                assert type(node.left) == ast.BinOp, ast.dump(node, indent=2)
+                assert type(node.left.op) == ast.Mult
+                assert type(node.left.left) == ast.Constant
 
-            current = node.left.left.value
+                current = node.left.left.value
+            elif type(node.left) == ast.Name:
+                assert node.left.id == qv
+                current = 1
+
             adjustment = lcm // current
             assert current * adjustment == lcm
 
-            node.left.left.value = lcm
+            if type(node.left) == ast.BinOp:
+                node.left.left.value = lcm
+            elif type(node.left) == ast.Name:
+                node.left = ast.BinOp(ast.Constant(adjustment), ast.Mult(), node.left)
             node.comparators = [
                 ast.BinOp(ast.Constant(adjustment), ast.Mult(), node.comparators[0])
             ]
+            if adjustment < 0:
+                if type(node.ops[0]) == ast.Lt:
+                    node.ops[0] = ast.Gt()
+                elif type(node.ops[0]) == ast.Gt:
+                    node.ops[0] = ast.Lt()
         return node
 
     return unify(node)
@@ -387,7 +420,7 @@ def handle_inequality(node):
             elif type(child.ops[0]) == ast.Gt:
                 greater_thans.add(child.comparators[0])
             else:
-                assert False, "unreachable"
+                assert False, ast.dump(child, indent=2)
         elif (
             type(child) == ast.BinOp
             and type(child.op) == ast.Mult
@@ -396,7 +429,9 @@ def handle_inequality(node):
         ):
             m = child.left
 
-    assert m
+    if not m:
+        return node
+
     assert less_thans
     assert greater_thans
 
@@ -426,6 +461,7 @@ def handle_inequality(node):
 def eliminate_quantifiers(root):
     return_negation = False
 
+    root = push_down_multiplies(root)
     root = ast_utils.simplify(root)
 
     root = remove_all(root)
@@ -449,6 +485,8 @@ def eliminate_quantifiers(root):
     root = insert_bounds(root)
     root = remove_or_equals(root)
     root = separate_all_qvars(root)
+
+    root = ast_utils.simplify(root)
     root = unify_coefficients(root)
 
     root = handle_equality(root)
