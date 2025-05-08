@@ -216,8 +216,8 @@ def insert_bounds(node):
 @ast_utils.modify_and_recurse
 def remove_or_equals(node):
     if type(node) == ast.Compare and type(node.ops[0]) in [ast.LtE, ast.GtE]:
-        new_op = ast.Lt() if node.ops[0] == ast.LtE else ast.Gt()
-        adjustment = ast.Add() if node.ops[0] == ast.LtE else ast.Sub()
+        new_op = ast.Lt() if type(node.ops[0]) == ast.LtE else ast.Gt()
+        adjustment = ast.Add() if type(node.ops[0]) == ast.LtE else ast.Sub()
         node = ast.Compare(
             node.left,
             [new_op],
@@ -288,18 +288,32 @@ def push_down_multiplies(node):
     if type(node) == ast.BinOp and type(node.op) == ast.Mult:
         if type(node.left) == ast.BinOp:
             assert type(node.right) == ast.Constant
-            return ast.BinOp(
-                ast.BinOp(node.right, ast.Mult(), node.left.left),
-                node.left.op,
-                node.left.right,
-            )
+            if type(node.left.op) in [ast.Add, ast.Sub]:
+                return ast.BinOp(
+                    ast.BinOp(node.right, ast.Mult(), node.left.left),
+                    node.left.op,
+                    ast.BinOp(node.right, ast.Mult(), node.left.right),
+                )
+            elif type(node.left.op) == ast.Mult:
+                return ast.BinOp(
+                    ast.BinOp(node.right, ast.Mult(), node.left.left),
+                    node.left.op,
+                    node.left.right,
+                )
         elif type(node.right) == ast.BinOp:
             assert type(node.left) == ast.Constant
-            return ast.BinOp(
-                ast.BinOp(node.left, ast.Mult(), node.right.left),
-                node.right.op,
-                node.right.right,
-            )
+            if type(node.right.op) in [ast.Add, ast.Sub]:
+                return ast.BinOp(
+                    ast.BinOp(node.left, ast.Mult(), node.right.left),
+                    node.right.op,
+                    ast.BinOp(node.left, ast.Mult(), node.right.right),
+                )
+            elif type(node.right.op) == ast.Mult:
+                return ast.BinOp(
+                    ast.BinOp(node.left, ast.Mult(), node.right.left),
+                    node.right.op,
+                    node.right.right,
+                )
     return node
 
 
@@ -485,7 +499,6 @@ def eliminate_quantifiers(root):
     root = insert_bounds(root)
     root = remove_or_equals(root)
     root = separate_all_qvars(root)
-
     root = ast_utils.simplify(root)
     root = unify_coefficients(root)
 
