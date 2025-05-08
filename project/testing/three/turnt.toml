@@ -1,0 +1,5 @@
+[envs.base]
+command = "python ../test_inputs.py three | python {filename}"
+
+[envs.transformed]
+command = "python ../../transform.py pass {filename}; python ../test_inputs.py three | python {base}_pa_qe.py"
