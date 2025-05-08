@@ -423,16 +423,16 @@ def handle_equality(node):
 #      between the beginning and end of the range
 #
 def handle_inequality(node):
-    less_thans = set()
-    greater_thans = set()
+    upper_bounds = set()
+    lower_bounds = set()
     m = None
     qv = get_qvar(node)
     for child in ast.walk(node):
         if type(child) == ast.Compare:
             if type(child.ops[0]) == ast.Lt:
-                less_thans.add(child.comparators[0])
+                upper_bounds.add(child.comparators[0])
             elif type(child.ops[0]) == ast.Gt:
-                greater_thans.add(child.comparators[0])
+                lower_bounds.add(child.comparators[0])
             else:
                 assert False, ast.dump(child, indent=2)
         elif (
@@ -446,27 +446,27 @@ def handle_inequality(node):
     if not m:
         return node
 
-    assert less_thans
-    assert greater_thans
+    assert upper_bounds
+    assert lower_bounds
 
-    least_lt = (
-        less_thans.pop()
-        if len(less_thans) == 1
-        else ast.Call(ast.Name("min", ast.Load()), list(less_thans), [])
+    least_ub = (
+        upper_bounds.pop()
+        if len(upper_bounds) == 1
+        else ast.Call(ast.Name("min", ast.Load()), list(upper_bounds), [])
     )
-    greatest_gt = (
-        greater_thans.pop()
-        if len(greater_thans) == 1
-        else ast.Call(ast.Name("max", ast.Load()), list(greater_thans), [])
+    greatest_lb = (
+        lower_bounds.pop()
+        if len(lower_bounds) == 1
+        else ast.Call(ast.Name("max", ast.Load()), list(lower_bounds), [])
     )
 
     range_check = ast.Compare(
-        ast.BinOp(least_lt, ast.Sub(), greatest_gt), [ast.Gt()], [m]
+        ast.BinOp(least_ub, ast.Sub(), greatest_lb), [ast.Gt()], [m]
     )
     wraparound_check = ast.Compare(
-        ast.BinOp(greatest_gt, ast.Mod(), m),
+        ast.BinOp(least_ub, ast.Mod(), m),
         [ast.Lt()],
-        [ast.BinOp(least_lt, ast.Mod(), m)],
+        [ast.BinOp(greatest_lb, ast.Mod(), m)],
     )
 
     return ast.BoolOp(ast.Or(), [range_check, wraparound_check])
