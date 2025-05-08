@@ -16,7 +16,7 @@ def one():
 
 @cli.command
 def two():
-    for m, n in itertools.product(range(-100, 100), range(-100, 100)):
+    for m, n in itertools.product(range(-10, 10), range(-10, 10)):
         print(m, n)
 
 
