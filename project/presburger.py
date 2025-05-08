@@ -291,14 +291,14 @@ def push_down_multiplies(node):
             return ast.BinOp(
                 ast.BinOp(node.right, ast.Mult(), node.left.left),
                 node.left.op,
-                ast.BinOp(node.right, ast.Mult(), node.left.right),
+                node.left.right,
             )
         elif type(node.right) == ast.BinOp:
             assert type(node.left) == ast.Constant
             return ast.BinOp(
                 ast.BinOp(node.left, ast.Mult(), node.right.left),
                 node.right.op,
-                ast.BinOp(node.left, ast.Mult(), node.right.right),
+                node.right.right,
             )
     return node
 

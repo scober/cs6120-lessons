@@ -59,10 +59,10 @@ def recurse_and_modify(f):
     return recursive
 
 
-# my qe pass generates a lot of dumb stuff, so remove the dumbest stuff
-# other things that would be nice to have:
-#   more robust constant folding, specifically for expressions like
-#     <constant> * (<constant> * <var>)
+# this is why languages (including this one) have pattern matching
+#   I didn't intend for this function to be so big, but here we are
+#   I suppose this is a lesson in just using the right tool for the job from the
+#     beginning
 @recurse_and_modify
 def simplify(node):
     if (
@@ -139,10 +139,14 @@ def simplify(node):
                 type(node.op) == ast.Mult and node.left.value == 1
             ):
                 return node.right
+            if type(node.op) == ast.Mult and node.left.value == 0:
+                return ast.Constant(0)
         elif type(node.right) == ast.Constant:
             if (type(node.op) == ast.Add and node.right.value == 0) or (
                 type(node.op) == ast.Mult and node.right.value == 1
             ):
                 return node.left
+            if type(node.op) == ast.Mult and node.right.value == 0:
+                return ast.Constant(0)
 
     return node
