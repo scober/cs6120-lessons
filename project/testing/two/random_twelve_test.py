@@ -1,7 +1,10 @@
 import sys
 
-def f(n, m):
-    return not -1160 - (-1 + m) > 1
+
+def f(m, n):
+    return any((not -21 < i for i in range(-47, m - n)))
+
+
 if __name__ == '__main__':
     for line in sys.stdin:
         inputs = list(map(int, line.split(' ')))
