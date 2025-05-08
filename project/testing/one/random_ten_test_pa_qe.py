@@ -1,7 +1,7 @@
 import sys
 
 def f(n):
-    return all((-31 * (19 * n) < 860 for i in range(-13 + -45 * (-25 * 41))))
+    return not -589 * n >= 860
 if __name__ == '__main__':
     for line in sys.stdin:
         inputs = list(map(int, line.split(' ')))

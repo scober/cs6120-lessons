@@ -1,7 +1,7 @@
 import sys
 
 def f(n):
-    return all((25 <= -31 for i in range(-419)))
+    return True
 if __name__ == '__main__':
     for line in sys.stdin:
         inputs = list(map(int, line.split(' ')))
