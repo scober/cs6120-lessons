@@ -9,6 +9,18 @@ def cli():
 
 
 @cli.command
+def demo():
+    for n in range(5000):
+        print(n)
+
+
+@cli.command
+def perf_one():
+    for n in range(-10000, 10000):
+        print(n)
+
+
+@cli.command
 def one():
     for n in range(-10, 10):
         print(n)
